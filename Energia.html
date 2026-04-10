@@ -293,6 +293,10 @@
         <div class="kpi-unit">kWh</div>
         <div class="kpi-date" id="kpiKwhDate"></div>
         <div class="kpi-daily" id="kpiKwhDaily"></div>
+        <div class="kpi-unit" style="margin-top:8px;color:var(--muted)" id="kpiKwhEstimateLabel">Estimativa 30 dias</div>
+        <div class="kpi-daily" id="kpiKwhEstimate" style="color:var(--accent)"></div>
+        <div class="kpi-unit" style="margin-top:8px;color:var(--muted)" id="kpiKwhPayLabel"></div>
+        <div id="kpiKwhPayDate" style="color:var(--danger);font-size:20px;font-weight:700;margin-top:2px"></div>
       </div>
       <div class="kpi">
         <div class="kpi-label">Custo Total</div>
@@ -332,7 +336,7 @@
     </div>
 
     <div class="card" id="monthlySection" style="display:none;margin-top:16px">
-      <div class="card-title">Evolução mensal — consumo e custo médio 2026 YTD</div>
+      <div class="card-title">Evolução por ciclo de faturação — consumo e custo médio</div>
       <div id="monthlyChart" style="width:100%;height:320px"></div>
     </div>
 
@@ -411,10 +415,10 @@ async function loadFromSupabase() {
     allMonthsData = saved.allMonthsData;
     omieData = saved.omieData || {};
 
-    const months = Object.keys(allMonthsData).sort();
-    if (months.length === 0) return;
+    const cycles = Object.keys(allMonthsData).sort();
+    if (cycles.length === 0) return;
 
-    const current = allMonthsData[months[months.length - 1]];
+    const current = allMonthsData[cycles[cycles.length - 1]];
     consumoData = current;
     currentDates = current.dates;
 
@@ -422,7 +426,7 @@ async function loadFromSupabase() {
     document.getElementById('periodLabel').textContent = fmt(first) + ' → ' + fmt(last);
     document.getElementById('emptyState').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
-    setOmieStatus('ok', 'Dados carregados do Supabase — ' + months.join(', '));
+    setOmieStatus('ok', 'Dados carregados do Supabase — ' + cycles.length + ' ciclos de faturação');
     computeAndRender();
   } catch(e) {
     console.error('Erro ao carregar:', e);
@@ -434,6 +438,19 @@ function showError(msg) {
   b.textContent = msg; b.style.display = 'block';
 }
 function clearError() { document.getElementById('errorBox').style.display = 'none'; }
+
+// Returns billing cycle key "YYYY-MM-DD" (the day-20 start) for a given date string "YYYY-MM-DD"
+function billingCycleKey(dateStr) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  if (d >= 20) {
+    // cycle starts this month on the 20th
+    return `${String(y).padStart(4,'0')}-${String(m).padStart(2,'0')}-20`;
+  } else {
+    // cycle started on the 20th of the previous month
+    const dt = new Date(y, m - 2, 20); // month is 0-based, so m-2 = previous month
+    return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-20`;
+  }
+}
 
 function parseExcelFile(arrayBuffer) {
   const wb = XLSX.read(arrayBuffer, { type: 'array' });
@@ -458,27 +475,52 @@ function parseExcelFile(arrayBuffer) {
   }
   if (allIntervals.length === 0) return null;
 
-  const monthCount = {};
+  // Discard anything before 20/12/2025 — that's before our first billing cycle
+  const MIN_DATE = '2025-12-20';
+  const filtered = allIntervals.filter(r => r.date >= MIN_DATE);
+  if (filtered.length === 0) return null;
+
+  // Return all intervals raw — grouping into billing cycles is done in onAllFilesLoaded
+  return { intervals: filtered };
+}
+
+function groupIntoBillingCycles(allIntervals) {
+  // Group intervals by billing cycle (20th → 19th of next month)
+  const cycleIntervals = {};
   allIntervals.forEach(r => {
-    const ym = r.date.slice(0, 7);
-    monthCount[ym] = (monthCount[ym] || 0) + 1;
-  });
-  const targetMonth = Object.entries(monthCount).sort((a,b) => b[1]-a[1])[0][0];
-  const intervals = allIntervals.filter(r => r.date.slice(0, 7) === targetMonth);
-
-  const byDay = {};
-  intervals.forEach(r => {
-    if (!byDay[r.date]) byDay[r.date] = 0;
-    byDay[r.date] += r.kwh * 0.25;
+    const key = billingCycleKey(r.date);
+    if (!cycleIntervals[key]) cycleIntervals[key] = [];
+    cycleIntervals[key].push(r);
   });
 
-  const intervalsPerDay = {};
-  intervals.forEach(r => { intervalsPerDay[r.date] = (intervalsPerDay[r.date] || 0) + 1; });
-  let dates = Object.keys(byDay).sort();
-  const lastDate = dates[dates.length - 1];
-  if (intervalsPerDay[lastDate] < 86) dates = dates.slice(0, -1);
+  const cycles = {};
+  Object.entries(cycleIntervals).forEach(([key, intervals]) => {
+    const byDay = {};
+    intervals.forEach(r => {
+      if (!byDay[r.date]) byDay[r.date] = 0;
+      byDay[r.date] += r.kwh * 0.25;
+    });
 
-  return { targetMonth, dates, dailyKwh: dates.map(d => byDay[d]), intervals: intervals.filter(r => dates.includes(r.date)) };
+    const intervalsPerDay = {};
+    intervals.forEach(r => { intervalsPerDay[r.date] = (intervalsPerDay[r.date] || 0) + 1; });
+
+    let dates = Object.keys(byDay).sort();
+    // Remove last day if it has incomplete data (< 86 intervals = < 21.5h)
+    // BUT only for the most recent cycle (current period)
+    const lastDate = dates[dates.length - 1];
+    if (intervalsPerDay[lastDate] < 86) dates = dates.slice(0, -1);
+
+    if (dates.length === 0) return;
+
+    cycles[key] = {
+      targetMonth: key, // reuse field name for compatibility
+      dates,
+      dailyKwh: dates.map(d => byDay[d]),
+      intervals: intervals.filter(r => dates.includes(r.date))
+    };
+  });
+
+  return cycles;
 }
 
 function handleFile(event) {
@@ -507,25 +549,27 @@ function handleFile(event) {
 function onAllFilesLoaded(results) {
   if (results.length === 0) { showError('Nenhum ficheiro válido encontrado.'); return; }
 
-  // Sort by month
-  results.sort((a, b) => a.targetMonth.localeCompare(b.targetMonth));
+  // Merge all raw intervals from all uploaded files
+  const allIntervals = results.flatMap(r => r.intervals);
 
-  // Most recent month = current view
-  const current = results[results.length - 1];
+  // Group into billing cycles (20th -> 19th)
+  allMonthsData = groupIntoBillingCycles(allIntervals);
+
+  const cycles = Object.keys(allMonthsData).sort();
+  if (cycles.length === 0) { showError('Sem dados válidos para processar.'); return; }
+
+  // Most recent cycle = current view
+  const current = allMonthsData[cycles[cycles.length - 1]];
   consumoData = current;
   currentDates = current.dates;
-
-  // Store all months
-  allMonthsData = {};
-  results.forEach(r => { allMonthsData[r.targetMonth] = r; });
 
   const first = current.dates[0], last = current.dates[current.dates.length - 1];
   document.getElementById('periodLabel').textContent = `${fmt(first)} → ${fmt(last)}`;
   document.getElementById('emptyState').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
 
-  // Fetch OMIE for all dates across all months
-  const allDates = results.flatMap(r => r.dates);
+  // Fetch OMIE for all dates across all cycles
+  const allDates = cycles.flatMap(k => allMonthsData[k].dates);
   fetchOmie(allDates);
 }
 
@@ -661,14 +705,26 @@ function computeAndRender() {
   const [ly, lm, ld] = dates[dates.length - 1].split('-');
   const monthName = monthNames[parseInt(lm) - 1];
   document.getElementById('breakdownTitle').textContent = `Decomposição do custo — ${monthName}, até dia ${parseInt(ld)}`;
-  document.getElementById('kpiKwhDate').textContent = dateLabel;
+  const firstDay = fmt(dates[0]);
+  document.getElementById('kpiKwhDate').textContent = `Calculado de ${firstDay} até ${lastDay}`;
   document.getElementById('kpiCostDate').textContent = dateLabel;
   document.getElementById('kpiAvgDate').textContent = dateLabel;
   document.getElementById('kpiKwhDaily').textContent = `Média diária: ${mediaKwhDia.toFixed(1)} kWh/dia`;
   document.getElementById('kpiCostDaily').textContent = `Média diária: ${mediaCustoDia.toFixed(2)} €/dia`;
   const daysInMonth = new Date(parseInt(ly), parseInt(lm), 0).getDate();
+  document.getElementById('kpiKwhEstimateLabel').textContent = `Estimativa ${daysInMonth} dias`;
+  document.getElementById('kpiKwhEstimate').textContent = `${(mediaKwhDia * daysInMonth).toFixed(0)} kWh`;
   document.getElementById('kpiCostEstimateLabel').textContent = `Estimativa ${daysInMonth} dias`;
   document.getElementById('kpiCostEstimate').textContent = `${(mediaCustoDia * daysInMonth).toFixed(2)} €`;
+  // Billing cycle always closes on the 19th of the month after the cycle start (day 20)
+  // Cycle start = day 20 of the first date's month
+  const [fy, fm] = dates[0].split('-').map(Number);
+  const closeDate = new Date(fy, fm, 19); // day 19 of month after cycle start (month is 0-based so fm = next month)
+  const emitDate = new Date(closeDate); emitDate.setDate(closeDate.getDate() + 8);
+  const payDate = new Date(emitDate); payDate.setDate(emitDate.getDate() + 30);
+  const fmtD = d => String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear();
+  document.getElementById('kpiKwhPayLabel').textContent = 'Data limite de pagamento';
+  document.getElementById('kpiKwhPayDate').textContent = fmtD(payDate);
 
   // Breakdown — um balão por item com IVA discriminado
   const items = [
@@ -870,21 +926,29 @@ function renderYTD() {
   const ytdTotal = ytdVariavelCost + ytdFixos;
   const ytdAvg = ytdKwh > 0 ? ytdTotal / ytdKwh : 0;
 
-  const firstMonth = monthNames[parseInt(months[0].split('-')[1]) - 1];
+  const firstCycleStart = months[0]; // "YYYY-MM-20"
+  const firstCycleData = allMonthsData[firstCycleStart];
+  const firstDate = firstCycleData.dates[0];
   const lastMonthData = allMonthsData[months[months.length-1]];
   const lastDate = lastMonthData.dates[lastMonthData.dates.length - 1];
-  document.getElementById('ytdTitle').textContent = `Year-to-Date — ${firstMonth} a ${fmt(lastDate)}`;
+  document.getElementById('ytdTitle').textContent = `Year-to-Date — ${fmt(firstDate)} a ${fmt(lastDate)}`;
+
+  const ytdNumCycles = months.length;
+  const ytdAvgKwhCycle = ytdKwh / ytdNumCycles;
+  const ytdAvgCostCycle = ytdTotal / ytdNumCycles;
 
   document.getElementById('ytdKpis').innerHTML = `
     <div class="kpi">
       <div class="kpi-label">Consumo Total YTD</div>
       <div class="kpi-value white">${ytdKwh.toFixed(0)}</div>
       <div class="kpi-unit">kWh acumulados</div>
+      <div class="kpi-daily" style="margin-top:8px">Média por ciclo: ${ytdAvgKwhCycle.toFixed(0)} kWh</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Custo Total YTD</div>
       <div class="kpi-value">${ytdTotal.toFixed(2)} €</div>
       <div class="kpi-unit">tudo incluído c/ IVA</div>
+      <div class="kpi-daily" style="margin-top:8px">Média por ciclo: ${ytdAvgCostCycle.toFixed(2)} €</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Custo Médio YTD por kWh</div>
@@ -982,8 +1046,11 @@ function renderMonthlyChart() {
 
   months.forEach(ym => {
     const m = allMonthsData[ym];
-    const mIdx = parseInt(ym.split('-')[1]) - 1;
-    labels.push(monthNames[mIdx]);
+    // Label: start date of cycle e.g. "20 Dez" from key "2025-12-20"
+    const cycleStart = m.dates[0]; // first actual date in cycle
+    const cycleEnd = m.dates[m.dates.length - 1];
+    const [sy, sm] = cycleStart.split('-');
+    labels.push(monthNames[parseInt(sm)-1] + '/' + monthNames[parseInt(cycleEnd.split('-')[1])-1]);
 
     let totalKwh = 0;
     let totalCost = 0;
