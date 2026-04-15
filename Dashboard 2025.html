@@ -408,11 +408,8 @@ async function loadFromSupabase() {
     document.getElementById('periodLabel').textContent = fmt(first) + ' → ' + fmt(last);
     document.getElementById('emptyState').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
-    setOmieStatus('loading', 'A actualizar preços OMIE reais...');
-
-    // Always refresh OMIE prices to ensure real values
-    const allDates = Object.values(allMonthsData).flatMap(m => m.dates);
-    fetchOmie(allDates);
+    setOmieStatus('ok', 'Dados carregados do Supabase — ' + cycles.length + ' ciclos de faturação');
+    computeAndRender();
   } catch(e) {
     console.error('Erro ao carregar:', e);
   }
@@ -584,9 +581,11 @@ async function fetchOmie(dates) {
   }
 
   if (ok === 0) {
-    setOmieStatus('fail', 'Preços OMIE indisponíveis — a usar estimativa 60 €/MWh');
-    dates.forEach(d => { omieData[d] = Array(96).fill(60); });
+    setOmieStatus('fail', 'Preços OMIE indisponíveis — dias sem preço');
+    dates.forEach(d => { omieData[d] = Array(96).fill(0); });
     document.getElementById('retryBtn').classList.add('visible');
+  } else if (ok < dates.length) {
+    setOmieStatus('fail', `Atenção: OMIE incompleto — ${ok}/${dates.length} dias com dados reais`);
   } else {
     setOmieStatus('ok', `Preços OMIE reais carregados (${ok}/${dates.length} dias)`);
   }
@@ -643,7 +642,7 @@ function computeAndRender() {
     const periodES = (hh * 4) + Math.floor(mm / 15);
     const periodPT = (periodES - 4 + 96) % 96;
     const prices = omieData[r.date];
-    const omie = prices ? prices[periodPT] / 1000 : 0.060;
+    const omie = prices ? prices[periodPT] / 1000 : 0;
 
     // Tarifas correctas para esta data
     const t = getTariffForDate(r.date);
@@ -719,7 +718,7 @@ function renderYTD() {
       const periodES = (rhh * 4) + Math.floor(rmm / 15);
       const periodPT = (periodES - 4 + 96) % 96;
       const prices = omieData[r.date];
-      const omie = prices ? prices[periodPT] / 1000 : 0.060;
+      const omie = prices ? prices[periodPT] / 1000 : 0;
       const td = getTariffForDate(r.date);
       const precoEnergia = ((omie + TARIFF.CGS + td.TSE + TARIFF.k) * (1 + TARIFF.FP)) + TARIFF.GO;
       const variaveis = precoEnergia + td.TAR + TARIFF.IEC + td.CR + td.CS;
@@ -885,7 +884,7 @@ function renderMonthlyChart() {
       const periodES = (hh * 4) + Math.floor(mm / 15);
       const periodPT = (periodES - 4 + 96) % 96;
       const prices = omieData[r.date];
-      const omie = prices ? prices[periodPT] / 1000 : 0.060;
+      const omie = prices ? prices[periodPT] / 1000 : 0;
       const td = getTariffForDate(r.date);
       const precoEnergia = ((omie + TARIFF.CGS + td.TSE + TARIFF.k) * (1 + TARIFF.FP)) + TARIFF.GO;
       const variaveis = precoEnergia + td.TAR + TARIFF.IEC + td.CR + td.CS;
@@ -1048,7 +1047,7 @@ function renderAudit() {
     const periodES = (hh * 4) + Math.floor(mm / 15);
     const periodPT = (periodES - 4 + 96) % 96;
     const prices = omieData[r.date];
-    const omie = prices ? prices[periodPT] / 1000 : 0.060;
+    const omie = prices ? prices[periodPT] / 1000 : 0;
     const td = getTariffForDate(r.date);
 
     omieTotal  += kwhI * omie * (1 + TARIFF.FP);
