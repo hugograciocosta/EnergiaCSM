@@ -595,20 +595,38 @@ async function fetchOmie(dates) {
 }
 
 function parseOmieFile(text) {
-  // Format: MARGINALPDBCPT; / year;month;day;period(1-96);priceES;pricePT;
-  // 96 periods of 15min, PT = ES - 1h (4 periods)
-  const prices96 = new Array(96).fill(null);
+  // Format: MARGINALPDBCPT; / year;month;day;period(1-96 or 1-24);priceES;pricePT;
+  // From 01/10/2025: 96 quarter-hourly periods (15min each)
+  // Before 01/10/2025: 24 hourly periods — expand each to 4 quarter-hours with same price
+  const pricesRaw = new Array(96).fill(null);
+  let maxPeriod = 0;
+
   for (const line of text.split('\n')) {
     const parts = line.split(';').map(s => s.trim());
     if (parts.length < 6) continue;
     const period = parseInt(parts[3]);
     if (isNaN(period) || period < 1 || period > 96) continue;
     const pricePT = parseFloat(parts[5].replace(',', '.'));
-    if (!isNaN(pricePT)) prices96[period - 1] = pricePT;
+    if (!isNaN(pricePT)) {
+      pricesRaw[period - 1] = pricePT;
+      if (period > maxPeriod) maxPeriod = period;
+    }
   }
-  if (prices96.every(p => p === null)) return null;
-  // Fill any nulls with 0
-  return prices96.map(p => p !== null ? p : 0);
+
+  if (pricesRaw.every(p => p === null)) return null;
+
+  // If only 24 periods received (hourly format), expand each hour to 4 quarter-hours
+  if (maxPeriod <= 24) {
+    const prices24 = pricesRaw.slice(0, 24).map(p => p !== null ? p : 0);
+    const prices96 = [];
+    for (const p of prices24) {
+      prices96.push(p, p, p, p);
+    }
+    return prices96;
+  }
+
+  // 96 periods — fill any nulls with 0
+  return pricesRaw.map(p => p !== null ? p : 0);
 }
 
 function setOmieStatus(state, msg) {
