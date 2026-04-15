@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard 2025</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0f11;
+    --surface: #161719;
+    --surface2: #1e2023;
+    --border: #2a2c30;
+    --accent: #c8f060;
+    --accent2: #60c8f0;
+    --text: #e8e9eb;
+    --muted: #6b6f77;
+    --danger: #f06060;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  header {
+    padding: 20px 16px 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .logo {
+    font-weight: 800;
+    font-size: clamp(20px, 4vw, 26px);
+    color: var(--text);
+  }
+  .logo span { color: var(--accent); }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .upload-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--accent);
+    color: #0e0f11;
+    border: none;
+    padding: 12px 20px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 10px;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+    min-height: 44px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .upload-btn:hover { opacity: 0.85; }
+
+  .retry-btn {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    color: var(--accent2);
+    border: 1px solid var(--accent2);
+    padding: 11px 16px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 10px;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+    min-height: 44px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .retry-btn:hover { opacity: 0.75; }
+  .retry-btn.visible { display: flex; }
+
+  #fileInput { display: none; }
+
+  .period-badge {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+    font-weight: 400;
+  }
+
+  main {
+    padding: 16px 16px 48px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  /* KPI row */
+  .kpis {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 640px) { .kpis { grid-template-columns: 1fr; } }
+  @media (min-width: 641px) and (max-width: 900px) {
+    .kpis { grid-template-columns: 1fr 1fr; }
+    .kpis .kpi:last-child { grid-column: span 2; }
+  }
+
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .kpi-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 500;
+  }
+  .kpi-value {
+    font-size: clamp(34px, 5vw, 52px);
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1;
+    letter-spacing: -1.5px;
+  }
+  .kpi-value.blue { color: var(--accent2); }
+  .kpi-value.white { color: var(--text); }
+  .kpi-unit {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 400;
+  }
+  .kpi-daily {
+    font-size: 16px;
+    color: var(--text);
+    font-weight: 600;
+    margin-top: 4px;
+  }
+  .kpi-date {
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 600;
+    margin-top: 2px;
+  }
+
+  /* Breakdown */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    font-weight: 600;
+    margin-bottom: 18px;
+  }
+  .breakdown {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 10px;
+  }
+  .breakdown-item {
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .breakdown-label {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .breakdown-iva {
+    font-size: 10px;
+    color: var(--muted);
+    opacity: 0.7;
+  }
+  .breakdown-value {
+    font-size: 16px;
+    color: var(--text);
+    font-weight: 700;
+  }
+  .breakdown-item.total {
+    border: 1px solid var(--accent);
+  }
+  .breakdown-item.total .breakdown-value {
+    color: var(--accent);
+    font-size: 18px;
+  }
+
+  /* Empty */
+  .empty {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--muted);
+  }
+  .empty-icon { font-size: 48px; margin-bottom: 16px; }
+  .empty-title { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+  .empty-sub { font-size: 13px; line-height: 1.8; }
+
+  .error-msg {
+    background: #2a1515;
+    border: 1px solid var(--danger);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: var(--danger);
+    margin-bottom: 16px;
+  }
+
+  .status-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  .status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--muted);
+    flex-shrink: 0;
+  }
+  .status-dot.ok { background: var(--accent); }
+  .status-dot.loading { background: var(--accent2); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">Dashboard <span>2025</span></div>
+    <div class="period-badge" id="periodLabel">Sem dados carregados</div>
+  </div>
+  <div class="header-right">
+    <button class="retry-btn" id="retryBtn" onclick="retryOmie()">↺ Retry OMIE</button>
+    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">↑ Carregar Excel</button>
+    <input type="file" id="fileInput" accept=".xlsx,.xls" multiple onchange="handleFile(event)">
+  </div>
+</header>
+
+<main>
+  <div id="errorBox" class="error-msg" style="display:none"></div>
+
+  <div id="emptyState" class="empty">
+    <div class="empty-icon">⚡</div>
+    <div class="empty-title">Sem dados</div>
+    <div class="empty-sub">Exporta o ficheiro de consumos do Balcão Digital E-Redes<br>e carrega-o aqui para ver a análise.</div>
+  </div>
+
+  <div id="dashboard" style="display:none">
+    <div class="status-row">
+      <div class="status-dot" id="omieStatusDot"></div>
+      <span id="omieStatusText">A carregar preços OMIE</span>
+    </div>
+
+    <div class="card" id="ytdSection" style="display:none;margin-top:16px">
+      <div class="card-title" id="ytdTitle">Year-to-Date</div>
+      <div class="kpis" id="ytdKpis" style="margin-bottom:20px"></div>
+      <div id="ytdChart" style="width:100%;height:300px"></div>
+      <div class="breakdown" id="ytdSummary" style="margin-top:16px"></div>
+    </div>
+
+    <div class="card" id="monthlySection" style="display:none;margin-top:16px">
+      <div class="card-title">Evolução mensal 2025 — consumo e custo médio</div>
+      <div id="monthlyChart" style="width:100%;height:380px"></div>
+    </div>
+
+    <div class="card" id="auditSection" style="display:none;margin-top:32px;border-top:2px solid var(--border)">
+      <div class="card-title">Auditoria por ciclo de faturação</div>
+      <div style="margin-bottom:16px">
+        <select id="cycleSelector" onchange="renderAudit()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:14px;font-family:'Inter',sans-serif;cursor:pointer;min-width:200px">
+        </select>
+      </div>
+      <div id="auditContent"></div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+// Coopernico GO E2.0 — BTN — 10.35 kVA
+// Tarifas variáveis por período — fontes: facturas Coopérnico reais
+const TARIFF_HISTORY = [
+  // { from: 'YYYY-MM-DD', TSE, TAR, CR, CS }
+  // Até 31/12/2025 (valores faturados em Dez 2025)
+  { from: '2025-01-01', TSE: 0.001657, TAR: 0.060000, CR: 0.013853, CS: 0.004955 },
+  // A partir de 01/01/2026 (valores faturados em Jan 2026)
+  { from: '2026-01-01', TSE: 0.002141, TAR: 0.060700, CR: 0.014266, CS: 0.002893 },
+];
+
+// Retorna as tarifas variáveis correctas para uma data YYYY-MM-DD
+function getTariffForDate(dateStr) {
+  let t = TARIFF_HISTORY[0];
+  for (const entry of TARIFF_HISTORY) {
+    if (dateStr >= entry.from) t = entry;
+  }
+  return t;
+}
+
+// Tarifas fixas (independentes da data)
+const TARIFF = {
+  k:            0.009,    // margem Coopérnico €/kWh — IVA 23%
+  CGS:          0.004,    // custos gestão sistema €/kWh — IVA 23%
+  GO:           0.0015,   // garantias de origem €/kWh — IVA 23%
+  FP:           0.16,     // fator de perdas
+  IEC:          0.001,    // imposto especial consumo €/kWh — IVA 23%
+  potencia_dia: 0.5000,   // potência contratada €/dia — IVA 23%
+  CAV_dia:      2.85 * 12 / 365.25, // contribuição audiovisual €/dia s/ IVA — IVA 6%
+  DGEG_mes:     0.07,     // taxa DGEG €/mês — IVA 23%
+  IVA23:        0.23,
+  IVA6:         0.06,
+};
+
+// Supabase config
+const SUPABASE_URL = 'https://fmwndkwcuqemcqgociqf.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZtd25ka3djdXFlbWNxZ29jaXFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzODA2OTksImV4cCI6MjA5MDk1NjY5OX0.DMXs-TZSQNvVdb-IObl3xs56LLFt3CF6thfcPdUQjEU';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { persistSession: false }
+});
+
+let consumoData = null;
+let omieData = {};
+let currentDates = [];
+let allMonthsData = {}; // { "2026-01": { dates, intervals }, ... }
+
+// Save data to Supabase
+async function saveToSupabase() {
+  try {
+    // Delete existing data first
+    await sb.from('energia_dados_2025').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    // Save all months
+    const meses = Object.keys(allMonthsData).sort();
+    if (meses.length === 0) return;
+    const payload = {
+      mes: meses.join(','),
+      dados: {
+        allMonthsData: Object.fromEntries(
+          Object.entries(allMonthsData).map(([k, v]) => [k, {
+            targetMonth: v.targetMonth,
+            dates: v.dates,
+            dailyKwh: v.dailyKwh,
+            intervals: v.intervals
+          }])
+        ),
+        omieData
+      }
+    };
+    await sb.from('energia_dados_2025').insert(payload);
+    console.log('Dados guardados no Supabase');
+    setOmieStatus('ok', 'Dados guardados — disponíveis em todos os dispositivos');
+  } catch(e) {
+    console.error('Erro ao guardar:', e);
+  }
+}
+
+// Load data from Supabase on page load
+async function loadFromSupabase() {
+  try {
+    const { data, error } = await sb.from('energia_dados_2025').select('*').order('created_at', { ascending: false }).limit(1);
+    if (error || !data || data.length === 0) return;
+    const saved = data[0].dados;
+    if (!saved || !saved.allMonthsData) return;
+
+    allMonthsData = saved.allMonthsData;
+    omieData = saved.omieData || {};
+
+    const cycles = Object.keys(allMonthsData).sort();
+    if (cycles.length === 0) return;
+
+    const current = allMonthsData[cycles[cycles.length - 1]];
+    consumoData = current;
+    currentDates = current.dates;
+
+    const first = current.dates[0], last = current.dates[current.dates.length - 1];
+    document.getElementById('periodLabel').textContent = fmt(first) + ' → ' + fmt(last);
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    setOmieStatus('loading', 'A actualizar preços OMIE reais...');
+
+    // Always refresh OMIE prices to ensure real values
+    const allDates = Object.values(allMonthsData).flatMap(m => m.dates);
+    fetchOmie(allDates);
+  } catch(e) {
+    console.error('Erro ao carregar:', e);
+  }
+}
+
+function showError(msg) {
+  const b = document.getElementById('errorBox');
+  b.textContent = msg; b.style.display = 'block';
+}
+function clearError() { document.getElementById('errorBox').style.display = 'none'; }
+
+// Returns billing cycle key "YYYY-MM-DD" (the day-20 start) for a given date string "YYYY-MM-DD"
+function billingCycleKey(dateStr) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  if (d >= 20) {
+    // cycle starts this month on the 20th
+    return `${String(y).padStart(4,'0')}-${String(m).padStart(2,'0')}-20`;
+  } else {
+    // cycle started on the 20th of the previous month
+    const dt = new Date(y, m - 2, 20); // month is 0-based, so m-2 = previous month
+    return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-20`;
+  }
+}
+
+function parseExcelFile(arrayBuffer) {
+  const wb = XLSX.read(arrayBuffer, { type: 'array' });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const raw = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+  let startRow = -1;
+  let colData = 0, colHora = 1, colKwh = 2;
+  for (let i = 0; i < raw.length; i++) {
+    if (raw[i][0] === 'Data' && raw[i][1] === 'Hora') { startRow = i + 1; colData=0; colHora=1; colKwh=2; break; }
+    if (raw[i][1] === 'Data' && raw[i][2] === 'Hora') { startRow = i + 1; colData=1; colHora=2; colKwh=3; break; }
+  }
+  if (startRow === -1) return null;
+
+  const allIntervals = [];
+  for (let i = startRow; i < raw.length; i++) {
+    const row = raw[i];
+    if (!row[colData] || !row[colHora] || row[colKwh] === undefined) continue;
+    const dateStr = String(row[colData]).trim();
+    const hora = String(row[colHora]).trim();
+    const kwh = parseFloat(row[colKwh]);
+    if (isNaN(kwh)) continue;
+    allIntervals.push({ date: dateStr.replace(/\//g, '-'), hora, kwh });
+  }
+  if (allIntervals.length === 0) return null;
+
+  // Return all intervals raw — grouping into billing cycles is done in onAllFilesLoaded
+  return { intervals: allIntervals };
+}
+
+function groupIntoBillingCycles(allIntervals) {
+  // Group intervals by billing cycle (20th → 19th of next month)
+  const cycleIntervals = {};
+  allIntervals.forEach(r => {
+    const key = billingCycleKey(r.date);
+    if (!cycleIntervals[key]) cycleIntervals[key] = [];
+    cycleIntervals[key].push(r);
+  });
+
+  const cycles = {};
+  Object.entries(cycleIntervals).forEach(([key, intervals]) => {
+    const byDay = {};
+    intervals.forEach(r => {
+      if (!byDay[r.date]) byDay[r.date] = 0;
+      byDay[r.date] += r.kwh * 0.25;
+    });
+
+    const intervalsPerDay = {};
+    intervals.forEach(r => { intervalsPerDay[r.date] = (intervalsPerDay[r.date] || 0) + 1; });
+
+    let dates = Object.keys(byDay).sort();
+    // Remove last day if it has incomplete data (< 86 intervals = < 21.5h)
+    // BUT only for the most recent cycle (current period)
+    const lastDate = dates[dates.length - 1];
+    if (intervalsPerDay[lastDate] < 86) dates = dates.slice(0, -1);
+
+    if (dates.length === 0) return;
+
+    cycles[key] = {
+      targetMonth: key, // reuse field name for compatibility
+      dates,
+      dailyKwh: dates.map(d => byDay[d]),
+      intervals: intervals.filter(r => dates.includes(r.date))
+    };
+  });
+
+  return cycles;
+}
+
+function handleFile(event) {
+  clearError();
+  const files = Array.from(event.target.files);
+  if (!files.length) return;
+
+  let pending = files.length;
+  const results = [];
+
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const parsed = parseExcelFile(e.target.result);
+        if (parsed) results.push(parsed);
+      } catch(err) { /* skip bad file */ }
+      pending--;
+      if (pending === 0) onAllFilesLoaded(results);
+    };
+    reader.readAsArrayBuffer(file);
+  });
+  event.target.value = '';
+}
+
+function onAllFilesLoaded(results) {
+  if (results.length === 0) { showError('Nenhum ficheiro válido encontrado.'); return; }
+
+  // Merge all raw intervals from all uploaded files
+  const allIntervals = results.flatMap(r => r.intervals);
+
+  // Group into billing cycles (20th -> 19th)
+  allMonthsData = groupIntoBillingCycles(allIntervals);
+
+  const cycles = Object.keys(allMonthsData).sort();
+  if (cycles.length === 0) { showError('Sem dados válidos para processar.'); return; }
+
+  // Most recent cycle = current view
+  const current = allMonthsData[cycles[cycles.length - 1]];
+  consumoData = current;
+  currentDates = current.dates;
+
+  const first = current.dates[0], last = current.dates[current.dates.length - 1];
+  document.getElementById('periodLabel').textContent = `${fmt(first)} → ${fmt(last)}`;
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+
+  // Fetch OMIE for all dates across all cycles
+  const allDates = cycles.flatMap(k => allMonthsData[k].dates);
+  fetchOmie(allDates);
+}
+
+function fmt(d) {
+  const [y,m,day] = d.split('-');
+  return `${day}/${m}/${y}`;
+}
+
+function retryOmie() {
+  if (currentDates.length > 0) fetchOmie(currentDates);
+}
+
+async function fetchOmie(dates) {
+  setOmieStatus('loading', 'A carregar preços OMIE...');
+  document.getElementById('retryBtn').classList.remove('visible');
+  omieData = {};
+  let ok = 0;
+
+  for (const date of dates) {
+    const [y, m, d] = date.split('-');
+    const fname = `${y}${m}${d}`;
+    const url = `https://omie-proxy.hugo-gracio-costa.workers.dev/?date=${fname}`;
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+      if (!res.ok) throw new Error();
+      const text = await res.text();
+      const prices = parseOmieFile(text);
+      if (prices) { omieData[date] = prices; ok++; }
+    } catch { /* silent */ }
+  }
+
+  if (ok === 0) {
+    setOmieStatus('fail', 'Preços OMIE indisponíveis — a usar estimativa 60 €/MWh');
+    dates.forEach(d => { omieData[d] = Array(96).fill(60); });
+    document.getElementById('retryBtn').classList.add('visible');
+  } else {
+    setOmieStatus('ok', `Preços OMIE reais carregados (${ok}/${dates.length} dias)`);
+  }
+
+  computeAndRender();
+  saveToSupabase();
+}
+
+function parseOmieFile(text) {
+  // Format: MARGINALPDBCPT; / year;month;day;period(1-96);priceES;pricePT;
+  // 96 periods of 15min, PT = ES - 1h (4 periods)
+  const prices96 = new Array(96).fill(null);
+  for (const line of text.split('\n')) {
+    const parts = line.split(';').map(s => s.trim());
+    if (parts.length < 6) continue;
+    const period = parseInt(parts[3]);
+    if (isNaN(period) || period < 1 || period > 96) continue;
+    const pricePT = parseFloat(parts[5].replace(',', '.'));
+    if (!isNaN(pricePT)) prices96[period - 1] = pricePT;
+  }
+  if (prices96.every(p => p === null)) return null;
+  // Fill any nulls with 0
+  return prices96.map(p => p !== null ? p : 0);
+}
+
+function setOmieStatus(state, msg) {
+  document.getElementById('omieStatusDot').className = 'status-dot ' + (state === 'ok' ? 'ok' : state === 'loading' ? 'loading' : '');
+  document.getElementById('omieStatusText').textContent = msg;
+}
+
+function computeAndRender() {
+  if (!consumoData) return;
+
+  const { dates, intervals } = consumoData;
+  const numDays = dates.length;
+  const lastDay = fmt(dates[dates.length - 1]);
+  const dateLabel = `Calculado até ${lastDay}`;
+
+  let totalKwh = 0;
+  // Componentes s/ IVA (todas sujeitas a 23% exceto CAV)
+  let omieTotal = 0;   // custo OMIE puro
+  let margemCoop = 0;  // margem Coopérnico
+  let cgsTotal = 0;    // CGS
+  let tseTotal = 0;    // tarifa social
+  let goTotal = 0;     // garantias de origem
+  let tarTotal = 0;    // acesso redes
+  let iecTotal = 0;    // imposto especial consumo
+  let crTotal = 0;     // custos regulação
+  let csTotal = 0;     // custos sistema
+
+  intervals.forEach(r => {
+    const kwhI = r.kwh * 0.25;
+    const [hh, mm] = r.hora.split(':').map(Number);
+    const periodES = (hh * 4) + Math.floor(mm / 15);
+    const periodPT = (periodES - 4 + 96) % 96;
+    const prices = omieData[r.date];
+    const omie = prices ? prices[periodPT] / 1000 : 0.060;
+
+    // Tarifas correctas para esta data
+    const t = getTariffForDate(r.date);
+
+    omieTotal   += kwhI * omie * (1 + TARIFF.FP);
+    margemCoop  += kwhI * TARIFF.k * (1 + TARIFF.FP);
+    cgsTotal    += kwhI * TARIFF.CGS * (1 + TARIFF.FP);
+    tseTotal    += kwhI * t.TSE * (1 + TARIFF.FP);
+    goTotal     += kwhI * TARIFF.GO;
+    tarTotal    += kwhI * t.TAR;
+    iecTotal    += kwhI * TARIFF.IEC;
+    crTotal     += kwhI * t.CR;
+    csTotal     += kwhI * t.CS;
+    totalKwh    += kwhI;
+  });
+
+  const potenciaSemIVA = numDays * TARIFF.potencia_dia;
+  const dgegSemIVA = TARIFF.DGEG_mes;
+  // CAV calculado por dia real do ciclo (não fixo por mês)
+  const cavSemIVA = TARIFF.CAV_dia * numDays;
+
+  // Tudo a 23% exceto CAV (6%)
+  const v = (x) => x * (1 + TARIFF.IVA23);
+  const totalSemCAV = omieTotal + margemCoop + cgsTotal + tseTotal + goTotal +
+                      tarTotal + iecTotal + crTotal + csTotal +
+                      potenciaSemIVA + dgegSemIVA;
+  const iva23Total = totalSemCAV * TARIFF.IVA23;
+  const iva6CAV = cavSemIVA * TARIFF.IVA6;
+  const totalComIVA = totalSemCAV + iva23Total + cavSemIVA + iva6CAV;
+  const custoMedio = totalKwh > 0 ? totalComIVA / totalKwh : 0;
+
+  // Custo mínimo por kWh (OMIE = 0): componentes variáveis que dependem do kWh, sem OMIE
+  // k + CGS + TSE (com FP) + GO + TAR + IEC + CR + CS — tudo com IVA 23%
+  const tdMin = getTariffForDate(dates[dates.length - 1]);
+  const custoMinSemIVA = (TARIFF.k + TARIFF.CGS + tdMin.TSE) * (1 + TARIFF.FP)
+                        + TARIFF.GO
+                        + tdMin.TAR + TARIFF.IEC + tdMin.CR + tdMin.CS;
+  const custoMin = custoMinSemIVA * (1 + TARIFF.IVA23);
+
+  // KPIs — secção do mês corrente removida no Dashboard 2025
+  // Apenas actualiza o período no header
+  const firstDay = fmt(dates[0]);
+  document.getElementById('periodLabel').textContent = `${firstDay} → ${lastDay}`;
+
+  renderYTD();
+  populateCycleSelector();
+
+}
+
+function renderYTD() {
+  const months = Object.keys(allMonthsData).sort();
+  if (months.length < 2) {
+    document.getElementById('ytdSection').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('ytdSection').style.display = 'block';
+
+  const monthNames = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const ytdPeriodoKeys = ['Noite\n00h-06h', 'Manhã\n06h-10h', 'Dia\n10h-17h', 'Tarde/Noite\n17h-00h'];
+  const ytdPeriodos = {};
+  const ytdPeriodosCost = {};
+  ytdPeriodoKeys.forEach(k => { ytdPeriodos[k] = 0; ytdPeriodosCost[k] = 0; });
+
+  let ytdKwh = 0, ytdVariavelCost = 0, ytdNumDays = 0;
+
+  months.forEach(ym => {
+    const m = allMonthsData[ym];
+    ytdNumDays += m.dates.length;
+    m.intervals.forEach(r => {
+      const kwhI = r.kwh * 0.25;
+      const [rhh, rmm] = r.hora.split(':').map(Number);
+      const periodES = (rhh * 4) + Math.floor(rmm / 15);
+      const periodPT = (periodES - 4 + 96) % 96;
+      const prices = omieData[r.date];
+      const omie = prices ? prices[periodPT] / 1000 : 0.060;
+      const td = getTariffForDate(r.date);
+      const precoEnergia = ((omie + TARIFF.CGS + td.TSE + TARIFF.k) * (1 + TARIFF.FP)) + TARIFF.GO;
+      const variaveis = precoEnergia + td.TAR + TARIFF.IEC + td.CR + td.CS;
+      const custoI = kwhI * variaveis * (1 + TARIFF.IVA23);
+      const hh = rhh;
+      let key;
+      if (hh < 6) key = 'Noite\n00h-06h';
+      else if (hh < 10) key = 'Manhã\n06h-10h';
+      else if (hh < 17) key = 'Dia\n10h-17h';
+      else key = 'Tarde/Noite\n17h-00h';
+      ytdPeriodos[key] += kwhI;
+      ytdPeriodosCost[key] += custoI;
+      ytdKwh += kwhI;
+      ytdVariavelCost += custoI;
+    });
+  });
+
+  const ytdPotencia = ytdNumDays * TARIFF.potencia_dia * (1 + TARIFF.IVA23);
+  const ytdDGEG = months.length * TARIFF.DGEG_mes * (1 + TARIFF.IVA23);
+  const ytdCAV = ytdNumDays * TARIFF.CAV_dia * (1 + TARIFF.IVA6);
+  const ytdFixos = ytdPotencia + ytdDGEG + ytdCAV;
+  const ytdTotal = ytdVariavelCost + ytdFixos;
+  const ytdAvg = ytdKwh > 0 ? ytdTotal / ytdKwh : 0;
+
+  const firstCycleStart = months[0]; // "YYYY-MM-20"
+  const firstCycleData = allMonthsData[firstCycleStart];
+  const firstDate = firstCycleData.dates[0];
+  const lastMonthData = allMonthsData[months[months.length-1]];
+  const lastDate = lastMonthData.dates[lastMonthData.dates.length - 1];
+  document.getElementById('ytdTitle').textContent = `Year-to-Date — ${fmt(firstDate)} a ${fmt(lastDate)}`;
+
+  const ytdNumCycles = months.length;
+  const ytdAvgKwhCycle = ytdKwh / ytdNumCycles;
+  const ytdAvgCostCycle = ytdTotal / ytdNumCycles;
+
+  const ytdAvgKwhDay = ytdKwh / ytdNumDays;
+  const ytdAvgCostDay = ytdTotal / ytdNumDays;
+
+  document.getElementById('ytdKpis').innerHTML = `
+    <div class="kpi">
+      <div class="kpi-label">Consumo Total YTD</div>
+      <div class="kpi-value white">${ytdKwh.toFixed(0)}</div>
+      <div class="kpi-unit">kWh acumulados</div>
+      <div class="kpi-daily" style="margin-top:8px">Média por ciclo: ${ytdAvgKwhCycle.toFixed(0)} kWh</div>
+      <div class="kpi-unit" style="margin-top:4px;color:var(--muted)">Média diária: ${ytdAvgKwhDay.toFixed(1)} kWh/dia</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Custo Total YTD</div>
+      <div class="kpi-value">${ytdTotal.toFixed(2)} €</div>
+      <div class="kpi-unit">tudo incluído c/ IVA</div>
+      <div class="kpi-daily" style="margin-top:8px">Média por ciclo: ${ytdAvgCostCycle.toFixed(2)} €</div>
+      <div class="kpi-unit" style="margin-top:4px;color:var(--muted)">Média diária: ${ytdAvgCostDay.toFixed(2)} €/dia</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Custo Médio YTD por kWh</div>
+      <div class="kpi-value blue">${ytdAvg.toFixed(4)} €</div>
+      <div class="kpi-unit">€/kWh ponderado real</div>
+    </div>
+  `;
+
+  // SVG chart YTD
+  const el = document.getElementById('ytdChart');
+  const W = el.getBoundingClientRect().width || window.innerWidth - 64 || 320;
+  const H = 300;
+  const padL = 55, padR = 20, padT = 20, padB = 84;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+  const colors = ['#60c8f0','#c8f060','#f0c860','#c860f0'];
+  const values = ytdPeriodoKeys.map(k => ytdPeriodosCost[k]);
+  const maxVal = Math.max(...values) * 1.15;
+  const n = ytdPeriodoKeys.length;
+  const barW = chartW / n * 0.6;
+  const gap = chartW / n;
+  const ytdTotalKwhPeriodos = ytdPeriodoKeys.reduce((s, k) => s + ytdPeriodos[k], 0);
+
+  let yLines = '', yLabels = '';
+  for (let i = 0; i <= 5; i++) {
+    const v = maxVal / 5 * i;
+    const y = padT + chartH - (v / maxVal * chartH);
+    yLines += `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#2a2c30" stroke-width="1"/>`;
+    yLabels += `<text x="${padL-6}" y="${y+4}" text-anchor="end" fill="#6b6f77" font-size="10" font-family="Inter,sans-serif">${v.toFixed(1)}€</text>`;
+  }
+
+  let bars = '', xlabels = '';
+  values.forEach((v, i) => {
+    const x = padL + gap * i + (gap - barW) / 2;
+    const bh = (v / maxVal) * chartH;
+    const y = padT + chartH - bh;
+    const pct = ytdTotal > 0 ? (v / ytdTotal * 100).toFixed(1) : 0;
+    const key = ytdPeriodoKeys[i];
+    const kwh = ytdPeriodos[key];
+    const pctKwh = ytdTotalKwhPeriodos > 0 ? (kwh / ytdTotalKwhPeriodos * 100).toFixed(1) : 0;
+    const avg = kwh > 0 ? v / kwh : 0;
+    bars += `<rect x="${x}" y="${y}" width="${barW}" height="${bh}" fill="${colors[i]}" opacity="0.85" rx="4"/>`;
+    bars += `<text x="${x+barW/2}" y="${y-6}" text-anchor="middle" fill="#e8e9eb" font-size="13" font-weight="bold" font-family="Inter,sans-serif">${v.toFixed(2)} €</text>`;
+    const timeLabel = key.split('\n')[1]; // only the time range e.g. "06h-10h"
+    const lx = x + barW/2;
+    const ly = padT + chartH + 18;
+    xlabels += `<text x="${lx}" y="${ly}" text-anchor="middle" fill="#6b6f77" font-size="13" font-family="Inter,sans-serif">${timeLabel}</text>`;
+    xlabels += `<text x="${lx}" y="${ly+18}" text-anchor="middle" fill="#e8e9eb" font-size="13" font-weight="bold" font-family="Inter,sans-serif">${pct}% custo · ${pctKwh}% kWh</text>`;
+    xlabels += `<text x="${lx}" y="${ly+34}" text-anchor="middle" fill="#6b6f77" font-size="12" font-family="Inter,sans-serif">Média: ${avg.toFixed(4)} €/kWh</text>`;
+  });
+
+  el.innerHTML = `<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+    ${yLines}${yLabels}${bars}${xlabels}
+  </svg>`;
+
+  // YTD summary boxes
+  const ytdSummaryHtml = ytdPeriodoKeys.map(k => {
+    const kwh = ytdPeriodos[k];
+    const cost = ytdPeriodosCost[k];
+    const avg = kwh > 0 ? cost / kwh : 0;
+    const pct = ytdTotal > 0 ? (cost / ytdTotal * 100).toFixed(1) : 0;
+    const pctKwh = ytdTotalKwhPeriodos > 0 ? (kwh / ytdTotalKwhPeriodos * 100).toFixed(1) : 0;
+    const label = k.replace('\n', ' ');
+    return `<div class="breakdown-item">
+      <div class="breakdown-label">${label}</div>
+      <div class="breakdown-iva">${kwh.toFixed(1)} kWh · ${pctKwh}% dos kWh · ${pct}% do custo</div>
+      <div class="breakdown-value">${cost.toFixed(2)} €</div>
+      <div class="breakdown-iva" style="margin-top:2px">Média: ${avg.toFixed(4)} €/kWh</div>
+    </div>`;
+  }).join('');
+  const ytdFixosHtml = `<div class="breakdown-item">
+    <div class="breakdown-label">Custos Fixos YTD</div>
+    <div class="breakdown-iva">Potência + DGEG + CAV · ${ytdTotal > 0 ? (ytdFixos/ytdTotal*100).toFixed(1) : 0}% do total</div>
+    <div class="breakdown-value">${ytdFixos.toFixed(2)} €</div>
+  </div>`;
+  document.getElementById('ytdSummary').innerHTML = ytdSummaryHtml + ytdFixosHtml;
+
+  renderMonthlyChart();
+}
+
+function renderMonthlyChart() {
+  const months = Object.keys(allMonthsData).sort();
+  if (months.length < 2) {
+    document.getElementById('monthlySection').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('monthlySection').style.display = 'block';
+  void document.getElementById('monthlySection').offsetHeight; // force reflow
+
+  const monthNames = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const labels = [];
+  const kwhData = [];
+  const avgData = [];
+  const minData = [];
+
+  months.forEach(ym => {
+    const m = allMonthsData[ym];
+    // Label: start date of cycle e.g. "20 Dez" from key "2025-12-20"
+    const cycleStart = m.dates[0]; // first actual date in cycle
+    const cycleEnd = m.dates[m.dates.length - 1];
+    const [sy, sm] = cycleStart.split('-');
+    labels.push(monthNames[parseInt(sm)-1] + '/' + monthNames[parseInt(cycleEnd.split('-')[1])-1]);
+
+    let totalKwh = 0;
+    let totalCost = 0;
+    let minCostTotal = 0;
+    m.intervals.forEach(r => {
+      const kwhI = r.kwh * 0.25;
+      const [hh, mm] = r.hora.split(':').map(Number);
+      const periodES = (hh * 4) + Math.floor(mm / 15);
+      const periodPT = (periodES - 4 + 96) % 96;
+      const prices = omieData[r.date];
+      const omie = prices ? prices[periodPT] / 1000 : 0.060;
+      const td = getTariffForDate(r.date);
+      const precoEnergia = ((omie + TARIFF.CGS + td.TSE + TARIFF.k) * (1 + TARIFF.FP)) + TARIFF.GO;
+      const variaveis = precoEnergia + td.TAR + TARIFF.IEC + td.CR + td.CS;
+      const custoI = kwhI * variaveis * (1 + TARIFF.IVA23);
+      // Custo mínimo: mesmo cálculo mas sem OMIE
+      const precoMin = ((TARIFF.CGS + td.TSE + TARIFF.k) * (1 + TARIFF.FP)) + TARIFF.GO;
+      const variaveisMin = precoMin + td.TAR + TARIFF.IEC + td.CR + td.CS;
+      const custoMinI = kwhI * variaveisMin * (1 + TARIFF.IVA23);
+      totalKwh += kwhI;
+      totalCost += custoI;
+      minCostTotal += custoMinI;
+    });
+
+    const numDays = m.dates.length;
+    const potencia = numDays * TARIFF.potencia_dia * (1 + TARIFF.IVA23);
+    const dgeg = TARIFF.DGEG_mes * (1 + TARIFF.IVA23);
+    const cav = numDays * TARIFF.CAV_dia * (1 + TARIFF.IVA6);
+    const totalComFixos = totalCost + potencia + dgeg + cav;
+    const avg = totalKwh > 0 ? totalComFixos / totalKwh : 0;
+    const minAvgKwh = totalKwh > 0 ? minCostTotal / totalKwh : 0;
+
+    kwhData.push(Math.round(totalKwh));
+    avgData.push(parseFloat(avg.toFixed(4)));
+    minData.push(parseFloat(minAvgKwh.toFixed(4)));
+  });
+
+  const el = document.getElementById('monthlyChart');
+  const W = window.innerWidth - 80 || 320;
+  const H = 380;
+  const padL = 55, padR = 60, padT = 30, padB = 60;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+
+  const maxKwh = Math.max(...kwhData) * 1.2;
+  const minAvg = Math.min(...avgData, ...minData) * 0.9;
+  const maxAvg = Math.max(...avgData, ...minData) * 1.1;
+  const n = labels.length;
+  const barW = Math.min(chartW / n * 0.55, 48);
+  const gap = chartW / n;
+
+  // Y left ticks (kWh)
+  let yLines = '', yLabelsL = '', yLabelsR = '';
+  for (let i = 0; i <= 4; i++) {
+    const v = maxKwh / 4 * i;
+    const y = padT + chartH - (v / maxKwh * chartH);
+    yLines += `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="#2a2c30" stroke-width="1"/>`;
+    yLabelsL += `<text x="${padL - 6}" y="${y + 4}" text-anchor="end" fill="#6b6f77" font-size="10" font-family="Inter,sans-serif">${Math.round(v)}</text>`;
+  }
+
+  // Y right axis labels (€/kWh)
+  for (let i = 0; i <= 4; i++) {
+    const v = minAvg + (maxAvg - minAvg) / 4 * i;
+    const y = padT + chartH - ((v - minAvg) / (maxAvg - minAvg) * chartH);
+    yLabelsR += `<text x="${W - padR + 6}" y="${y + 4}" text-anchor="start" fill="#c8f060" font-size="10" font-family="Inter,sans-serif">${v.toFixed(3)}</text>`;
+  }
+
+  // Bars + line points (custo médio verde + custo mínimo vermelho)
+  let bars = '', xlabels = '', linePoints = '', lineDots = '', lineLabels = '';
+  let minLinePoints = '', minLineDots = '', minLineLabels = '';
+  const pts = [];
+  const ptsMin = [];
+  kwhData.forEach((kwh, i) => {
+    const x = padL + gap * i + (gap - barW) / 2;
+    const bh = (kwh / maxKwh) * chartH;
+    const y = padT + chartH - bh;
+    bars += `<rect x="${x}" y="${y}" width="${barW}" height="${bh}" fill="#60c8f0" opacity="0.7" rx="3"/>`;
+    bars += `<text x="${x + barW/2}" y="${y - 5}" text-anchor="middle" fill="#e8e9eb" font-size="11" font-weight="bold" font-family="Inter,sans-serif">${kwh} kWh</text>`;
+    xlabels += `<text x="${padL + gap * i + gap/2}" y="${padT + chartH + 18}" text-anchor="middle" fill="#6b6f77" font-size="11" font-family="Inter,sans-serif">${labels[i]}</text>`;
+
+    const avg = avgData[i];
+    const cy = padT + chartH - ((avg - minAvg) / (maxAvg - minAvg) * chartH);
+    const cx = padL + gap * i + gap / 2;
+    pts.push([cx, cy, avg]);
+
+    const mn = minData[i];
+    const mny = padT + chartH - ((mn - minAvg) / (maxAvg - minAvg) * chartH);
+    ptsMin.push([cx, mny, mn]);
+  });
+
+  // Linha custo médio (verde)
+  linePoints = pts.map(p => `${p[0]},${p[1]}`).join(' ');
+  pts.forEach(([cx, cy, avg]) => {
+    lineDots += `<circle cx="${cx}" cy="${cy}" r="4" fill="#c8f060"/>`;
+    lineLabels += `<text x="${cx}" y="${cy - 8}" text-anchor="middle" fill="#c8f060" font-size="10" font-weight="bold" font-family="Inter,sans-serif">${avg.toFixed(4)} €</text>`;
+  });
+
+  // Linha custo mínimo (vermelho)
+  minLinePoints = ptsMin.map(p => `${p[0]},${p[1]}`).join(' ');
+  ptsMin.forEach(([cx, cy, mn]) => {
+    minLineDots += `<circle cx="${cx}" cy="${cy}" r="4" fill="#f06060"/>`;
+    minLineLabels += `<text x="${cx}" y="${cy + 16}" text-anchor="middle" fill="#f06060" font-size="10" font-weight="bold" font-family="Inter,sans-serif">${mn.toFixed(4)} €</text>`;
+  });
+
+  // Legenda
+  const legendY = padT + chartH + 34;
+  const legendX = padL;
+  const legend = `
+    <circle cx="${legendX + 6}" cy="${legendY}" r="4" fill="#c8f060"/>
+    <text x="${legendX + 14}" y="${legendY + 4}" fill="#c8f060" font-size="10" font-family="Inter,sans-serif">Custo médio €/kWh</text>
+    <circle cx="${legendX + 120}" cy="${legendY}" r="4" fill="#f06060"/>
+    <text x="${legendX + 128}" y="${legendY + 4}" fill="#f06060" font-size="10" font-family="Inter,sans-serif">Custo mínimo €/kWh (OMIE=0)</text>
+    <rect x="${legendX + 260}" y="${legendY - 4}" width="10" height="8" fill="#60c8f0" opacity="0.7" rx="1"/>
+    <text x="${legendX + 274}" y="${legendY + 4}" fill="#60c8f0" font-size="10" font-family="Inter,sans-serif">Consumo kWh</text>
+  `;
+
+  // Axis labels
+  const axisL = `<text x="${padL - 40}" y="${padT + chartH/2}" text-anchor="middle" fill="#6b6f77" font-size="10" font-family="Inter,sans-serif" transform="rotate(-90,${padL-40},${padT+chartH/2})">kWh</text>`;
+  const axisR = `<text x="${W - padR + 48}" y="${padT + chartH/2}" text-anchor="middle" fill="#c8f060" font-size="10" font-family="Inter,sans-serif" transform="rotate(90,${W-padR+48},${padT+chartH/2})">€/kWh</text>`;
+
+  el.innerHTML = `<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+    ${yLines}${yLabelsL}${yLabelsR}${axisL}${axisR}
+    ${bars}
+    <polyline points="${linePoints}" fill="none" stroke="#c8f060" stroke-width="2"/>
+    ${lineDots}${lineLabels}
+    <polyline points="${minLinePoints}" fill="none" stroke="#f06060" stroke-width="2" stroke-dasharray="5,3"/>
+    ${minLineDots}${minLineLabels}
+    ${xlabels}
+    ${legend}
+  </svg>`;
+}
+
+// Load saved data on page open
+function populateCycleSelector() {
+  const cycles = Object.keys(allMonthsData).sort();
+  if (cycles.length === 0) return;
+  const sel = document.getElementById('cycleSelector');
+  const monthNames = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  sel.innerHTML = cycles.map(key => {
+    const m = allMonthsData[key];
+    const first = m.dates[0];
+    const last = m.dates[m.dates.length - 1];
+    const [fy,fm,fd] = first.split('-');
+    const [ly,lm,ld] = last.split('-');
+    const label = `${fd}/${fm}/${fy} → ${ld}/${lm}/${ly}`;
+    return `<option value="${key}">${label}</option>`;
+  }).join('');
+  // Default to most recent
+  sel.value = cycles[cycles.length - 1];
+  document.getElementById('auditSection').style.display = 'block';
+  renderAudit();
+}
+
+function renderAudit() {
+  const key = document.getElementById('cycleSelector').value;
+  const m = allMonthsData[key];
+  if (!m) return;
+
+  const { dates, intervals } = m;
+  const numDays = dates.length;
+  const first = dates[0];
+  const last = dates[dates.length - 1];
+
+  let totalKwh = 0;
+  let omieTotal = 0, margemCoop = 0, cgsTotal = 0, tseTotal = 0;
+  let goTotal = 0, tarTotal = 0, iecTotal = 0, crTotal = 0, csTotal = 0;
+
+  intervals.forEach(r => {
+    const kwhI = r.kwh * 0.25;
+    const [hh, mm] = r.hora.split(':').map(Number);
+    const periodES = (hh * 4) + Math.floor(mm / 15);
+    const periodPT = (periodES - 4 + 96) % 96;
+    const prices = omieData[r.date];
+    const omie = prices ? prices[periodPT] / 1000 : 0.060;
+    const td = getTariffForDate(r.date);
+
+    omieTotal  += kwhI * omie * (1 + TARIFF.FP);
+    margemCoop += kwhI * TARIFF.k * (1 + TARIFF.FP);
+    cgsTotal   += kwhI * TARIFF.CGS * (1 + TARIFF.FP);
+    tseTotal   += kwhI * td.TSE * (1 + TARIFF.FP);
+    goTotal    += kwhI * TARIFF.GO;
+    tarTotal   += kwhI * td.TAR;
+    iecTotal   += kwhI * TARIFF.IEC;
+    crTotal    += kwhI * td.CR;
+    csTotal    += kwhI * td.CS;
+    totalKwh   += kwhI;
+  });
+
+  const potenciaSemIVA = numDays * TARIFF.potencia_dia;
+  const dgegSemIVA = TARIFF.DGEG_mes;
+  const cavSemIVA = TARIFF.CAV_dia * numDays;
+
+  const varSemIVA = omieTotal + margemCoop + cgsTotal + tseTotal + goTotal + tarTotal + iecTotal + crTotal + csTotal;
+  const totalSemIVA = varSemIVA + potenciaSemIVA + dgegSemIVA;
+  const iva23 = totalSemIVA * TARIFF.IVA23;
+  const iva6 = cavSemIVA * TARIFF.IVA6;
+  const totalComIVA = totalSemIVA + iva23 + cavSemIVA + iva6;
+  const custoMedio = totalKwh > 0 ? totalComIVA / totalKwh : 0;
+
+  // Categorias: Variáveis, Fixos
+  // Variáveis: componentes energia + IVA 23% sobre elas
+  const varComIVA = varSemIVA * (1 + TARIFF.IVA23);
+  // Fixos: Potência + DGEG + CAV + IVA respectivo
+  const fixosComIVA = potenciaSemIVA * (1 + TARIFF.IVA23) + dgegSemIVA * (1 + TARIFF.IVA23) + cavSemIVA * (1 + TARIFF.IVA6);
+  // Custo evitável por kWh (o que realmente poupo por cada kWh que não consumo)
+  const custoEvitavel = totalKwh > 0 ? varComIVA / totalKwh : 0;
+  const pctVar = totalComIVA > 0 ? (varComIVA / totalComIVA * 100) : 0;
+  const pctFix = totalComIVA > 0 ? (fixosComIVA / totalComIVA * 100) : 0;
+
+  const fmt2 = v => v.toFixed(2) + ' €';
+  const fmt4 = v => v.toFixed(4) + ' €';
+
+  const rows = [
+    ['Energia OMIE', omieTotal, '23%'],
+    ['Margem Coopérnico', margemCoop, '23%'],
+    ['Gest. Sistema (CGS)', cgsTotal, '23%'],
+    ['Tarifa Social (TSE)', tseTotal, '23%'],
+    ['Garantias Origem (GO)', goTotal, '23%'],
+    ['Acesso Redes (TAR)', tarTotal, '23%'],
+    ['Imp. Esp. Consumo (IEC)', iecTotal, '23%'],
+    ['Custos Regulação (CR)', crTotal, '23%'],
+    ['Custos Sistema (CS)', csTotal, '23%'],
+    ['Potência Contratada', potenciaSemIVA, '23%'],
+    ['Taxa DGEG', dgegSemIVA, '23%'],
+    ['Contrib. Audiovisual (CAV)', cavSemIVA, '6%'],
+  ];
+
+  const rowsHtml = rows.map(([label, val, iva]) => {
+    const ivaRate = iva === '23%' ? TARIFF.IVA23 : TARIFF.IVA6;
+    const comIVA = val * (1 + ivaRate);
+    return `<tr>
+      <td style="padding:8px 12px;color:var(--text);border-bottom:1px solid var(--border)">${label}</td>
+      <td style="padding:8px 12px;color:var(--muted);border-bottom:1px solid var(--border);text-align:right">IVA ${iva}</td>
+      <td style="padding:8px 12px;color:var(--text);border-bottom:1px solid var(--border);text-align:right;font-weight:600">${fmt2(comIVA)}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('auditContent').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+      <div style="background:var(--surface2);border-radius:10px;padding:14px 16px">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Período</div>
+        <div style="font-size:15px;font-weight:600;color:var(--text)">${fmt(first)} → ${fmt(last)}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">${numDays} dias</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:10px;padding:14px 16px">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Consumo total</div>
+        <div style="font-size:15px;font-weight:600;color:var(--text)">${totalKwh.toFixed(0)} kWh</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">Média: ${(totalKwh/numDays).toFixed(1)} kWh/dia</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:10px;padding:14px 16px">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Custo médio</div>
+        <div style="font-size:15px;font-weight:600;color:var(--accent2)">${fmt4(custoMedio)}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">€/kWh ponderado real</div>
+      </div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:16px">
+      <thead>
+        <tr style="border-bottom:1px solid var(--border)">
+          <th style="padding:8px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:500">Componente</th>
+          <th style="padding:8px 12px;text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:500">IVA</th>
+          <th style="padding:8px 12px;text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:500">Valor c/ IVA</th>
+        </tr>
+      </thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>
+    <div style="background:var(--surface2);border:1px solid var(--accent);border-radius:10px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+      <div style="font-size:13px;color:var(--muted)">Total calculado c/ IVA</div>
+      <div style="font-size:22px;font-weight:800;color:var(--accent)">${fmt2(totalComIVA)}</div>
+    </div>
+
+    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;font-weight:600">Decomposição por categoria</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:8px">
+      <div style="background:var(--surface2);border-radius:10px;padding:16px">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Custos variáveis</div>
+        <div style="font-size:22px;font-weight:800;color:#f06060">${fmt2(varComIVA)}</div>
+        <div style="font-size:13px;color:#f06060;font-weight:600;margin-top:4px">${pctVar.toFixed(1)}% do total</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.6">Energia OMIE + Margem + CGS + TSE + GO + TAR + IEC + CR + CS + IVA 23%</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:10px;padding:16px">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Custos fixos</div>
+        <div style="font-size:22px;font-weight:800;color:var(--accent2)">${fmt2(fixosComIVA)}</div>
+        <div style="font-size:13px;color:var(--accent2);font-weight:600;margin-top:4px">${pctFix.toFixed(1)}% do total</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.6">Potência + DGEG + CAV + IVA respectivo</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;font-style:italic">Pagas sempre, independentemente do consumo</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:10px;padding:16px;border:1px solid var(--accent)">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Custo evitável por kWh</div>
+        <div style="font-size:22px;font-weight:800;color:var(--accent)">${custoEvitavel.toFixed(4)} €</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:8px;line-height:1.6">Por cada kWh que não consomes, poupas exactamente este valor na factura</div>
+      </div>
+    </div>
+  `;
+}
+
+window.addEventListener("load", loadFromSupabase);
+</script>
+</body>
+</html>
