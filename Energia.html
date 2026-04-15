@@ -635,6 +635,8 @@ async function fetchOmie(dates) {
     setOmieStatus('fail', 'Preços OMIE indisponíveis — dias sem preço OMIE');
     dates.forEach(d => { omieData[d] = Array(96).fill(0); });
     document.getElementById('retryBtn').classList.add('visible');
+  } else if (ok < dates.length) {
+    setOmieStatus('fail', `Atenção: OMIE incompleto — ${ok}/${dates.length} dias com dados reais`);
   } else {
     setOmieStatus('ok', `Preços OMIE reais carregados (${ok}/${dates.length} dias)`);
   }
