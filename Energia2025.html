@@ -408,8 +408,11 @@ async function loadFromSupabase() {
     document.getElementById('periodLabel').textContent = fmt(first) + ' → ' + fmt(last);
     document.getElementById('emptyState').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
-    setOmieStatus('ok', 'Dados carregados do Supabase — ' + cycles.length + ' ciclos de faturação');
-    computeAndRender();
+    setOmieStatus('loading', 'A actualizar preços OMIE reais...');
+
+    // Always refresh OMIE prices to ensure real values
+    const allDates = Object.values(allMonthsData).flatMap(m => m.dates);
+    fetchOmie(allDates);
   } catch(e) {
     console.error('Erro ao carregar:', e);
   }
