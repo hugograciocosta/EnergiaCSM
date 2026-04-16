@@ -319,6 +319,7 @@
         <div class="kpi-unit">€/kWh quando OMIE = 0</div>
         <div class="kpi-date" id="kpiMinDate"></div>
       </div>
+      <div class="kpi" id="fixosCard"></div>
     </div>
 
     <div class="card">
@@ -331,8 +332,6 @@
       <div id="periodosChart" style="width:100%;height:300px"></div>
       <div class="breakdown" id="periodoSummary" style="margin-top:16px"></div>
     </div>
-
-    <div class="kpi" id="fixosCard" style="margin-top:16px"></div>
 
     <div class="card" id="ytdSection" style="display:none;margin-top:16px">
       <div class="card-title" id="ytdTitle">Year-to-Date</div>
@@ -907,12 +906,22 @@ function computeAndRender() {
   document.getElementById('periodoSummary').innerHTML = periodoSummaryHtml;
 
   // Fixed costs big card
-  const fixosCost = (potenciaSemIVA + dgegSemIVA) * (1 + TARIFF.IVA23) + cavSemIVA * (1 + TARIFF.IVA6);
+  const BASE_LOAD_KWH_DIA = 4.6; // base load estimada — equipamentos sempre ligados (frio, câmeras, stand-bys)
+  const baseLoadKwh = BASE_LOAD_KWH_DIA * numDays;
+  const baseLoadCost = baseLoadKwh * custoMedio; // custo ao preço médio do período
+  const contratuaisCost = (potenciaSemIVA + dgegSemIVA) * (1 + TARIFF.IVA23) + cavSemIVA * (1 + TARIFF.IVA6);
+  const fixosCost = contratuaisCost + baseLoadCost;
   const fixosPct = totalComIVA > 0 ? (fixosCost / totalComIVA * 100).toFixed(1) : 0;
+  const contratuaisPct = totalComIVA > 0 ? (contratuaisCost / totalComIVA * 100).toFixed(1) : 0;
+  const baseLoadPct = totalComIVA > 0 ? (baseLoadCost / totalComIVA * 100).toFixed(1) : 0;
   document.getElementById('fixosCard').innerHTML = `
-    <div class="kpi-label">Custos Fixos Mensais</div>
+    <div class="kpi-label">Custos Fixos</div>
     <div class="kpi-value" style="font-size:clamp(28px,4vw,44px)">${fixosCost.toFixed(2)} €</div>
-    <div class="kpi-unit">Potência + DGEG + CAV · ${fixosPct}% do total c/ IVA</div>
+    <div class="kpi-unit" style="margin-bottom:10px">${fixosPct}% do total c/ IVA</div>
+    <div style="font-size:12px;color:var(--muted);margin-top:6px">Potência + DGEG + CAV c/ IVA</div>
+    <div style="font-size:14px;color:var(--text);font-weight:600">${contratuaisCost.toFixed(2)} € <span style="color:var(--muted);font-weight:400;font-size:11px">(${contratuaisPct}%)</span></div>
+    <div style="font-size:12px;color:var(--muted);margin-top:6px">Base load estimada (${baseLoadKwh.toFixed(0)} kWh · ${BASE_LOAD_KWH_DIA} kWh/dia)</div>
+    <div style="font-size:14px;color:var(--text);font-weight:600">${baseLoadCost.toFixed(2)} € <span style="color:var(--muted);font-weight:400;font-size:11px">(${baseLoadPct}%)</span></div>
   `;
 
   renderYTD();
@@ -985,6 +994,15 @@ function renderYTD() {
   const ytdAvgKwhDay = ytdKwh / ytdNumDays;
   const ytdAvgCostDay = ytdTotal / ytdNumDays;
 
+  const BASE_LOAD_KWH_DIA_YTD = 4.6;
+  const ytdBaseLoadKwh = BASE_LOAD_KWH_DIA_YTD * ytdNumDays;
+  const ytdAvgPrice = ytdKwh > 0 ? ytdTotal / ytdKwh : 0;
+  const ytdBaseLoadCost = ytdBaseLoadKwh * ytdAvgPrice;
+  const ytdFixosTotal = ytdFixos + ytdBaseLoadCost;
+  const ytdFixosPct = ytdTotal > 0 ? (ytdFixosTotal / ytdTotal * 100).toFixed(1) : 0;
+  const ytdContratuaisPct = ytdTotal > 0 ? (ytdFixos / ytdTotal * 100).toFixed(1) : 0;
+  const ytdBaseLoadPct = ytdTotal > 0 ? (ytdBaseLoadCost / ytdTotal * 100).toFixed(1) : 0;
+
   document.getElementById('ytdKpis').innerHTML = `
     <div class="kpi">
       <div class="kpi-label">Consumo Total YTD</div>
@@ -1004,6 +1022,15 @@ function renderYTD() {
       <div class="kpi-label">Custo Médio YTD por kWh</div>
       <div class="kpi-value blue">${ytdAvg.toFixed(4)} €</div>
       <div class="kpi-unit">€/kWh ponderado real</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Custos Fixos YTD</div>
+      <div class="kpi-value" style="font-size:clamp(28px,4vw,44px)">${ytdFixosTotal.toFixed(2)} €</div>
+      <div class="kpi-unit" style="margin-bottom:10px">${ytdFixosPct}% do total c/ IVA</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px">Potência + DGEG + CAV c/ IVA</div>
+      <div style="font-size:14px;color:var(--text);font-weight:600">${ytdFixos.toFixed(2)} € <span style="color:var(--muted);font-weight:400;font-size:11px">(${ytdContratuaisPct}%)</span></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px">Base load (${ytdBaseLoadKwh.toFixed(0)} kWh · ${BASE_LOAD_KWH_DIA_YTD} kWh/dia)</div>
+      <div style="font-size:14px;color:var(--text);font-weight:600">${ytdBaseLoadCost.toFixed(2)} € <span style="color:var(--muted);font-weight:400;font-size:11px">(${ytdBaseLoadPct}%)</span></div>
     </div>
   `;
 
@@ -1069,12 +1096,7 @@ function renderYTD() {
       <div class="breakdown-iva" style="margin-top:2px">Média: ${avg.toFixed(4)} €/kWh</div>
     </div>`;
   }).join('');
-  const ytdFixosHtml = `<div class="breakdown-item">
-    <div class="breakdown-label">Custos Fixos YTD</div>
-    <div class="breakdown-iva">Potência + DGEG + CAV · ${ytdTotal > 0 ? (ytdFixos/ytdTotal*100).toFixed(1) : 0}% do total</div>
-    <div class="breakdown-value">${ytdFixos.toFixed(2)} €</div>
-  </div>`;
-  document.getElementById('ytdSummary').innerHTML = ytdSummaryHtml + ytdFixosHtml;
+  document.getElementById('ytdSummary').innerHTML = ytdSummaryHtml;
 
   renderMonthlyChart();
 }
@@ -1382,10 +1404,23 @@ function renderAudit() {
       </div>
       <div style="background:var(--surface2);border-radius:10px;padding:16px">
         <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Custos fixos</div>
-        <div style="font-size:22px;font-weight:800;color:var(--accent2)">${fmt2(fixosComIVA)}</div>
-        <div style="font-size:13px;color:var(--accent2);font-weight:600;margin-top:4px">${pctFix.toFixed(1)}% do total</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.6">Potência + DGEG + CAV + IVA respectivo</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px;font-style:italic">Pagas sempre, independentemente do consumo</div>
+        ${(() => {
+          const BASE_LOAD_KWH_DIA_AUD = 4.6;
+          const audBaseLoadKwh = BASE_LOAD_KWH_DIA_AUD * numDays;
+          const audBaseLoadCost = audBaseLoadKwh * custoMedio;
+          const audFixosTotal = fixosComIVA + audBaseLoadCost;
+          const audPctFix = totalComIVA > 0 ? (audFixosTotal / totalComIVA * 100).toFixed(1) : 0;
+          const audPctContr = totalComIVA > 0 ? (fixosComIVA / totalComIVA * 100).toFixed(1) : 0;
+          const audPctBase = totalComIVA > 0 ? (audBaseLoadCost / totalComIVA * 100).toFixed(1) : 0;
+          return `
+            <div style="font-size:22px;font-weight:800;color:var(--accent2)">${audFixosTotal.toFixed(2)} €</div>
+            <div style="font-size:13px;color:var(--accent2);font-weight:600;margin-top:4px">${audPctFix}% do total</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:10px">Potência + DGEG + CAV c/ IVA</div>
+            <div style="font-size:13px;color:var(--text);font-weight:600;margin-top:2px">${fixosComIVA.toFixed(2)} € <span style="color:var(--muted);font-weight:400;font-size:11px">(${audPctContr}%)</span></div>
+            <div style="font-size:11px;color:var(--muted);margin-top:6px">Base load (${audBaseLoadKwh.toFixed(0)} kWh · ${BASE_LOAD_KWH_DIA_AUD} kWh/dia)</div>
+            <div style="font-size:13px;color:var(--text);font-weight:600;margin-top:2px">${audBaseLoadCost.toFixed(2)} € <span style="color:var(--muted);font-weight:400;font-size:11px">(${audPctBase}%)</span></div>
+          `;
+        })()}
       </div>
       <div style="background:var(--surface2);border-radius:10px;padding:16px;border:1px solid var(--accent)">
         <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Custo evitável por kWh</div>
