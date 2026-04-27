@@ -805,7 +805,7 @@ function computeAndRender() {
   document.getElementById('breakdown').innerHTML = breakdownHtml + totalHtml;
 
   // Períodos de consumo
-  const periodoKeys = ['Noite\n00h-06h', 'Manhã\n06h-10h', 'Dia\n10h-17h', 'Tarde/Noite\n17h-00h'];
+  const periodoKeys = ['Madrugada\n00h-03h', 'Base Load\n03h-10h', 'Solar\n10h-17h', 'Rampa\n17h-19h', 'Pico Noturno\n19h-00h'];
   const periodos = {};
   const periodosCost = {};
   periodoKeys.forEach(k => { periodos[k] = 0; periodosCost[k] = 0; });
@@ -824,10 +824,11 @@ function computeAndRender() {
     const custoInterval = kwhI * variaveis * (1 + TARIFF.IVA23);
 
     let key;
-    if (hh < 6) key = 'Noite\n00h-06h';
-    else if (hh < 10) key = 'Manhã\n06h-10h';
-    else if (hh < 17) key = 'Dia\n10h-17h';
-    else key = 'Tarde/Noite\n17h-00h';
+    if (hh < 3) key = 'Madrugada\n00h-03h';
+    else if (hh < 10) key = 'Base Load\n03h-10h';
+    else if (hh < 17) key = 'Solar\n10h-17h';
+    else if (hh < 19) key = 'Rampa\n17h-19h';
+    else key = 'Pico Noturno\n19h-00h';
     periodos[key] += kwhI;
     periodosCost[key] += custoInterval;
   });
@@ -842,7 +843,7 @@ function computeAndRender() {
     const padL = 55, padR = 20, padT = 20, padB = 84;
     const chartW = W - padL - padR;
     const chartH = H - padT - padB;
-    const colors = ['#60c8f0','#c8f060','#f0c860','#c860f0'];
+    const colors = ['#60c8f0','#8860f0','#c8f060','#f0c860','#c860f0'];
     const values = periodoKeys.map(k => periodosCost[k]);
     const maxVal = Math.max(...values) * 1.15;
     const n = periodoKeys.length;
@@ -949,7 +950,7 @@ function renderYTD() {
   document.getElementById('ytdSection').style.display = 'block';
 
   const monthNames = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-  const ytdPeriodoKeys = ['Noite\n00h-06h', 'Manhã\n06h-10h', 'Dia\n10h-17h', 'Tarde/Noite\n17h-00h'];
+  const ytdPeriodoKeys = ['Madrugada\n00h-03h', 'Base Load\n03h-10h', 'Solar\n10h-17h', 'Rampa\n17h-19h', 'Pico Noturno\n19h-00h'];
   const ytdPeriodos = {};
   const ytdPeriodosCost = {};
   ytdPeriodoKeys.forEach(k => { ytdPeriodos[k] = 0; ytdPeriodosCost[k] = 0; });
@@ -972,10 +973,11 @@ function renderYTD() {
       const custoI = kwhI * variaveis * (1 + TARIFF.IVA23);
       const hh = rhh;
       let key;
-      if (hh < 6) key = 'Noite\n00h-06h';
-      else if (hh < 10) key = 'Manhã\n06h-10h';
-      else if (hh < 17) key = 'Dia\n10h-17h';
-      else key = 'Tarde/Noite\n17h-00h';
+      if (hh < 3) key = 'Madrugada\n00h-03h';
+      else if (hh < 10) key = 'Base Load\n03h-10h';
+      else if (hh < 17) key = 'Solar\n10h-17h';
+      else if (hh < 19) key = 'Rampa\n17h-19h';
+      else key = 'Pico Noturno\n19h-00h';
       ytdPeriodos[key] += kwhI;
       ytdPeriodosCost[key] += custoI;
       ytdKwh += kwhI;
@@ -1057,7 +1059,7 @@ function renderYTD() {
   const padL = 55, padR = 20, padT = 20, padB = 84;
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
-  const colors = ['#60c8f0','#c8f060','#f0c860','#c860f0'];
+  const colors = ['#60c8f0','#8860f0','#c8f060','#f0c860','#c860f0'];
   const values = ytdPeriodoKeys.map(k => ytdPeriodosCost[k]);
   const maxVal = Math.max(...values) * 1.15;
   const n = ytdPeriodoKeys.length;
