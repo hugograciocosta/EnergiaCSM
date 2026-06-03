@@ -1,0 +1,2430 @@
+<!DOCTYPE html>
+<!-- saved from url=(0055)file:///Users/costahugo/Downloads/Energia_github_2.html -->
+<html lang="pt"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Energia</title>
+<script src="./Energia_files/xlsx.full.min.js"></script>
+<script src="./Energia_files/supabase-js@2"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0f11;
+    --surface: #161719;
+    --surface2: #1e2023;
+    --border: #2a2c30;
+    --accent: #c8f060;
+    --accent2: #60c8f0;
+    --text: #e8e9eb;
+    --muted: #6b6f77;
+    --danger: #f06060;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  header {
+    padding: 20px 16px 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .logo {
+    font-weight: 800;
+    font-size: clamp(20px, 4vw, 26px);
+    color: var(--text);
+  }
+  .logo span { color: var(--accent); }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .upload-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--accent);
+    color: #0e0f11;
+    border: none;
+    padding: 12px 20px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 10px;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+    min-height: 44px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .upload-btn:hover { opacity: 0.85; }
+
+  .retry-btn {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    color: var(--accent2);
+    border: 1px solid var(--accent2);
+    padding: 11px 16px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 10px;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+    min-height: 44px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .retry-btn:hover { opacity: 0.75; }
+  .retry-btn.visible { display: flex; }
+
+  #fileInput { display: none; }
+
+  .period-badge {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+    font-weight: 400;
+  }
+
+  main {
+    padding: 16px 16px 48px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  /* KPI row */
+  .kpis {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 640px) { .kpis { grid-template-columns: 1fr; } }
+  @media (min-width: 641px) and (max-width: 900px) {
+    .kpis { grid-template-columns: 1fr 1fr; }
+    .kpis .kpi:last-child { grid-column: span 2; }
+  }
+
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .kpi-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 500;
+  }
+  .kpi-value {
+    font-size: clamp(34px, 5vw, 52px);
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1;
+    letter-spacing: -1.5px;
+  }
+  .kpi-value.blue { color: var(--accent2); }
+  .kpi-value.white { color: var(--text); }
+  .kpi-unit {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 400;
+  }
+  .kpi-daily {
+    font-size: 16px;
+    color: var(--text);
+    font-weight: 600;
+    margin-top: 4px;
+  }
+  .kpi-date {
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 600;
+    margin-top: 2px;
+  }
+
+  /* Breakdown */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    font-weight: 600;
+    margin-bottom: 18px;
+  }
+  .breakdown {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 10px;
+  }
+  .breakdown-item {
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .breakdown-label {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .breakdown-iva {
+    font-size: 10px;
+    color: var(--muted);
+    opacity: 0.7;
+  }
+  .breakdown-value {
+    font-size: 16px;
+    color: var(--text);
+    font-weight: 700;
+  }
+  .breakdown-item.total {
+    border: 1px solid var(--accent);
+  }
+  .breakdown-item.total .breakdown-value {
+    color: var(--accent);
+    font-size: 18px;
+  }
+
+  /* Empty */
+  .empty {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--muted);
+  }
+  .empty-icon { font-size: 48px; margin-bottom: 16px; }
+  .empty-title { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+  .empty-sub { font-size: 13px; line-height: 1.8; }
+
+  .error-msg {
+    background: #2a1515;
+    border: 1px solid var(--danger);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: var(--danger);
+    margin-bottom: 16px;
+  }
+
+  .status-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  .status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--muted);
+    flex-shrink: 0;
+  }
+  .status-dot.ok { background: var(--accent); }
+  .status-dot.loading { background: var(--accent2); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">luz<span>.</span></div>
+    <div class="period-badge" id="periodLabel">20/05/2026 → 02/06/2026</div>
+  </div>
+  <div class="header-right">
+    <button class="retry-btn" id="retryBtn" onclick="retryOmie()">↺ Retry OMIE</button>
+    <button class="upload-btn" onclick="document.getElementById(&#39;fileInput&#39;).click()">↑ Carregar Excel</button>
+    <input type="file" id="fileInput" accept=".xlsx,.xls" multiple="" onchange="handleFile(event)">
+  </div>
+</header>
+
+<main>
+  <div id="errorBox" class="error-msg" style="display:none"></div>
+
+  <div id="emptyState" class="empty" style="display: none;">
+    <div class="empty-icon">⚡</div>
+    <div class="empty-title">Sem dados</div>
+    <div class="empty-sub">Exporta o ficheiro de consumos do Balcão Digital E-Redes<br>e carrega-o aqui para ver a análise.</div>
+  </div>
+
+  <div id="dashboard" style="display: block;">
+    <div class="status-row">
+      <div class="status-dot ok" id="omieStatusDot"></div>
+      <span id="omieStatusText">Dados guardados — disponíveis em todos os dispositivos</span>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="kpi-label">Último Dia Completo</div>
+        <div class="kpi-value white" id="kpiLastDay">14.8</div>
+        <div class="kpi-unit">kWh</div>
+        <div class="kpi-date" id="kpiLastDayDate">2 Junho 2026</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Consumo Total</div>
+        <div class="kpi-value white" id="kpiKwh">294</div>
+        <div class="kpi-unit">kWh</div>
+        <div class="kpi-date" id="kpiKwhDate">Calculado de 20/05/2026 até 02/06/2026</div>
+        <div class="kpi-daily" id="kpiKwhDaily">Média diária: 21.0 kWh/dia</div>
+        <div class="kpi-unit" style="margin-top:8px;color:var(--muted)" id="kpiKwhEstimateLabel">Estimativa 30 dias</div>
+        <div class="kpi-daily" id="kpiKwhEstimate" style="color:var(--accent)">629 kWh</div>
+        <div class="kpi-unit" style="margin-top:8px;color:var(--muted)" id="kpiKwhPayLabel">Data limite de pagamento</div>
+        <div id="kpiKwhPayDate" style="color:var(--danger);font-size:20px;font-weight:700;margin-top:2px">27/07/2026</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Custo Total</div>
+        <div class="kpi-value" id="kpiCost">62.76 €</div>
+        <div class="kpi-unit">€ tudo incluído c/ IVA</div>
+        <div class="kpi-date" id="kpiCostDate">Calculado até 02/06/2026</div>
+        <div class="kpi-daily" id="kpiCostDaily">Média diária: 4.48 €/dia</div>
+        <div class="kpi-unit" style="margin-top:8px;color:var(--muted)" id="kpiCostEstimateLabel">Estimativa 30 dias</div>
+        <div class="kpi-daily" id="kpiCostEstimate" style="color:var(--accent)">134.48 €</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Custo Médio por kWh</div>
+        <div class="kpi-value blue" id="kpiAvg">0.2138 €</div>
+        <div class="kpi-unit">€/kWh ponderado real</div>
+        <div class="kpi-date" id="kpiAvgDate">Calculado até 02/06/2026</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Custo Mínimo por kWh</div>
+        <div class="kpi-value" style="color:#f06060" id="kpiMin">0.1200 €</div>
+        <div class="kpi-unit">€/kWh quando OMIE = 0</div>
+        <div class="kpi-date" id="kpiMinDate">Calculado até 02/06/2026</div>
+      </div>
+      <div class="kpi" id="fixosCard">
+    <div class="kpi-label">Custos Fixos</div>
+    <div class="kpi-value" style="font-size:clamp(28px,4vw,44px)">34.53 €</div>
+    <div class="kpi-unit" style="margin-bottom:10px">55.0% do total c/ IVA</div>
+    <div style="font-size:12px;color:var(--muted);margin-top:6px">Potência + DGEG + CAV c/ IVA</div>
+    <div style="font-size:14px;color:var(--text);font-weight:600">10.58 € <span style="color:var(--muted);font-weight:400;font-size:11px">(16.9%)</span></div>
+    <div style="font-size:12px;color:var(--muted);margin-top:6px">Base load estimada (112 kWh · 8 kWh/dia)</div>
+    <div style="font-size:14px;color:var(--text);font-weight:600">23.95 € <span style="color:var(--muted);font-weight:400;font-size:11px">(38.2%)</span></div>
+  </div>
+      <div class="kpi" id="omieAvgCard">
+    <div class="kpi-label">Preço Médio OMIE</div>
+    <div class="kpi-value blue" style="font-size:clamp(28px,4vw,44px)">0.0577 €</div>
+    <div class="kpi-unit">€/kWh c/ IVA · custo energia pura</div>
+    <div class="kpi-date">Calculado até 02/06/2026</div>
+  </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" id="breakdownTitle">Decomposição do custo — Junho, até dia 2</div>
+      <div class="breakdown" id="breakdown">
+      <div class="breakdown-item">
+        <div class="breakdown-label">Energia OMIE</div>
+        <div class="breakdown-iva">IVA 23% incluído</div>
+        <div class="breakdown-value">16.94 €</div>
+      </div>
+      <div class="breakdown-item">
+        <div class="breakdown-label">Margem Coopérnico</div>
+        <div class="breakdown-iva">IVA 23% incluído</div>
+        <div class="breakdown-value">3.77 €</div>
+      </div>
+      <div class="breakdown-item">
+        <div class="breakdown-label">Gest. Sistema (CGS)</div>
+        <div class="breakdown-iva">IVA 23% incluído</div>
+        <div class="breakdown-value">1.68 €</div>
+      </div>
+      <div class="breakdown-item">
+        <div class="breakdown-label">Tarifa Social (TSE)</div>
+        <div class="breakdown-iva">IVA 23% incluído</div>
+        <div class="breakdown-value">0.77 €</div>
+      </div>
+      <div class="breakdown-item">
+        <div class="breakdown-label">Garantias Origem (GO)</div>
+        <div class="breakdown-iva">IVA 23% incluído</div>
+        <div class="breakdown-value">0.54 €</div>
+      </div>
+      <div class="breakdown-item">
+        <div class="breakdown-label">Acesso Redes (TAR)</div>
+        <div class="breakdown-iva">IVA 23% incluído</div>
+        <div class="breakdown-value">21.91 €</div>
+      </div>
+      <div class="breakdown-item">
+        <div class="breakdown-label">Imp. Esp. Consumo (IEC)</div>
+        <div class="breakdown-iva">IVA 23% incluído</div>
+        <div class="breakdown-value">0.36 €</div>
+      </div>
+      <div class="breakdown-item">
+        <div class="breakdown-label">Custos Regulação (CR)</div>
+        <div class="breakdown-iva">IVA 23% incluído</div>
+        <div class="breakdown-value">5.15 €</div>
+      </div>
+      <div class="breakdown-item">
+        <div class="breakdown-label">Custos Sistema (CS)</div>
+        <div class="breakdown-iva">IVA 23% incluído</div>
+        <div class="breakdown-value">1.04 €</div>
+      </div>
+      <div class="breakdown-item">
+        <div class="breakdown-label">Potência Contratada</div>
+        <div class="breakdown-iva">IVA 23% incluído</div>
+        <div class="breakdown-value">9.11 €</div>
+      </div>
+      <div class="breakdown-item">
+        <div class="breakdown-label">Taxa DGEG</div>
+        <div class="breakdown-iva">IVA 23% incluído</div>
+        <div class="breakdown-value">0.09 €</div>
+      </div>
+      <div class="breakdown-item">
+        <div class="breakdown-label">Contrib. Audiovisual</div>
+        <div class="breakdown-iva">IVA 6% incluído</div>
+        <div class="breakdown-value">1.39 €</div>
+      </div>
+    <div class="breakdown-item total">
+      <div class="breakdown-label">Total c/ IVA</div>
+      <div class="breakdown-iva">02/06/2026</div>
+      <div class="breakdown-value">62.76 €</div>
+    </div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" id="periodosTitle">Custo por período do dia — Junho, até dia 2</div>
+      <div id="periodosChart" style="width:100%;height:300px"><svg width="100%" height="300" viewBox="0 0 1018 300" xmlns="http://www.w3.org/2000/svg">
+      <line x1="55" y1="216" x2="998" y2="216" stroke="#2a2c30" stroke-width="1"></line><line x1="55" y1="176.8" x2="998" y2="176.8" stroke="#2a2c30" stroke-width="1"></line><line x1="55" y1="137.6" x2="998" y2="137.6" stroke="#2a2c30" stroke-width="1"></line><line x1="55" y1="98.39999999999998" x2="998" y2="98.39999999999998" stroke="#2a2c30" stroke-width="1"></line><line x1="55" y1="59.19999999999999" x2="998" y2="59.19999999999999" stroke="#2a2c30" stroke-width="1"></line><line x1="55" y1="20" x2="998" y2="20" stroke="#2a2c30" stroke-width="1"></line><text x="49" y="220" text-anchor="end" fill="#6b6f77" font-size="10" font-family="Inter,sans-serif">0.0€</text><text x="49" y="180.8" text-anchor="end" fill="#6b6f77" font-size="10" font-family="Inter,sans-serif">3.4€</text><text x="49" y="141.6" text-anchor="end" fill="#6b6f77" font-size="10" font-family="Inter,sans-serif">6.9€</text><text x="49" y="102.39999999999998" text-anchor="end" fill="#6b6f77" font-size="10" font-family="Inter,sans-serif">10.3€</text><text x="49" y="63.19999999999999" text-anchor="end" fill="#6b6f77" font-size="10" font-family="Inter,sans-serif">13.7€</text><text x="49" y="24" text-anchor="end" fill="#6b6f77" font-size="10" font-family="Inter,sans-serif">17.2€</text><rect x="92.72" y="117.865267870795" width="113.16" height="98.134732129205" fill="#60c8f0" opacity="0.85" rx="4"></rect><text x="149.3" y="111.865267870795" text-anchor="middle" fill="#e8e9eb" font-size="13" font-weight="bold" font-family="Inter,sans-serif">8.59 €</text><rect x="281.32" y="91.17830299468868" width="113.16" height="124.82169700531132" fill="#8860f0" opacity="0.85" rx="4"></rect><text x="337.9" y="85.17830299468868" text-anchor="middle" fill="#e8e9eb" font-size="13" font-weight="bold" font-family="Inter,sans-serif">10.93 €</text><rect x="469.91999999999996" y="45.565217391304316" width="113.16" height="170.43478260869568" fill="#c8f060" opacity="0.85" rx="4"></rect><text x="526.5" y="39.565217391304316" text-anchor="middle" fill="#e8e9eb" font-size="13" font-weight="bold" font-family="Inter,sans-serif">14.92 €</text><rect x="658.52" y="162.2276729840067" width="113.16" height="53.77232701599332" fill="#f0c860" opacity="0.85" rx="4"></rect><text x="715.1" y="156.2276729840067" text-anchor="middle" fill="#e8e9eb" font-size="13" font-weight="bold" font-family="Inter,sans-serif">4.71 €</text><rect x="847.12" y="67.22745210733817" width="113.16" height="148.77254789266183" fill="#c860f0" opacity="0.85" rx="4"></rect><text x="903.7" y="61.227452107338166" text-anchor="middle" fill="#e8e9eb" font-size="13" font-weight="bold" font-family="Inter,sans-serif">13.02 €</text><text x="149.3" y="234" text-anchor="middle" fill="#6b6f77" font-size="13" font-family="Inter,sans-serif">00h-03h</text><text x="149.3" y="252" text-anchor="middle" fill="#e8e9eb" font-size="13" font-weight="bold" font-family="Inter,sans-serif">13.7% custo · 11.0% kWh</text><text x="149.3" y="268" text-anchor="middle" fill="#6b6f77" font-size="12" font-family="Inter,sans-serif">Média: 0.2650 €/kWh</text><text x="337.9" y="234" text-anchor="middle" fill="#6b6f77" font-size="13" font-family="Inter,sans-serif">03h-10h</text><text x="337.9" y="252" text-anchor="middle" fill="#e8e9eb" font-size="13" font-weight="bold" font-family="Inter,sans-serif">17.4% custo · 15.9% kWh</text><text x="337.9" y="268" text-anchor="middle" fill="#6b6f77" font-size="12" font-family="Inter,sans-serif">Média: 0.2343 €/kWh</text><text x="526.5" y="234" text-anchor="middle" fill="#6b6f77" font-size="13" font-family="Inter,sans-serif">10h-17h</text><text x="526.5" y="252" text-anchor="middle" fill="#e8e9eb" font-size="13" font-weight="bold" font-family="Inter,sans-serif">23.8% custo · 41.7% kWh</text><text x="526.5" y="268" text-anchor="middle" fill="#6b6f77" font-size="12" font-family="Inter,sans-serif">Média: 0.1220 €/kWh</text><text x="715.1" y="234" text-anchor="middle" fill="#6b6f77" font-size="13" font-family="Inter,sans-serif">17h-19h</text><text x="715.1" y="252" text-anchor="middle" fill="#e8e9eb" font-size="13" font-weight="bold" font-family="Inter,sans-serif">7.5% custo · 13.2% kWh</text><text x="715.1" y="268" text-anchor="middle" fill="#6b6f77" font-size="12" font-family="Inter,sans-serif">Média: 0.1218 €/kWh</text><text x="903.7" y="234" text-anchor="middle" fill="#6b6f77" font-size="13" font-family="Inter,sans-serif">19h-00h</text><text x="903.7" y="252" text-anchor="middle" fill="#e8e9eb" font-size="13" font-weight="bold" font-family="Inter,sans-serif">20.8% custo · 18.2% kWh</text><text x="903.7" y="268" text-anchor="middle" fill="#6b6f77" font-size="12" font-family="Inter,sans-serif">Média: 0.2432 €/kWh</text>
+    </svg></div>
+      <div class="breakdown" id="periodoSummary" style="margin-top:16px"><div class="breakdown-item">
+      <div class="breakdown-label">Madrugada 00h-03h</div>
+      <div class="breakdown-iva">32.4 kWh · 11.0% dos kWh · 13.7% do custo</div>
+      <div class="breakdown-value">8.59 €</div>
+      <div class="breakdown-iva" style="margin-top:2px">Média: 0.2650 €/kWh</div>
+    </div><div class="breakdown-item">
+      <div class="breakdown-label">Base Load 03h-10h</div>
+      <div class="breakdown-iva">46.6 kWh · 15.9% dos kWh · 17.4% do custo</div>
+      <div class="breakdown-value">10.93 €</div>
+      <div class="breakdown-iva" style="margin-top:2px">Média: 0.2343 €/kWh</div>
+    </div><div class="breakdown-item">
+      <div class="breakdown-label">Solar 10h-17h</div>
+      <div class="breakdown-iva">122.3 kWh · 41.7% dos kWh · 23.8% do custo</div>
+      <div class="breakdown-value">14.92 €</div>
+      <div class="breakdown-iva" style="margin-top:2px">Média: 0.1220 €/kWh</div>
+    </div><div class="breakdown-item">
+      <div class="breakdown-label">Rampa 17h-19h</div>
+      <div class="breakdown-iva">38.6 kWh · 13.2% dos kWh · 7.5% do custo</div>
+      <div class="breakdown-value">4.71 €</div>
+      <div class="breakdown-iva" style="margin-top:2px">Média: 0.1218 €/kWh</div>
+    </div><div class="breakdown-item">
+      <div class="breakdown-label">Pico Noturno 19h-00h</div>
+      <div class="breakdown-iva">53.6 kWh · 18.2% dos kWh · 20.8% do custo</div>
+      <div class="breakdown-value">13.02 €</div>
+      <div class="breakdown-iva" style="margin-top:2px">Média: 0.2432 €/kWh</div>
+    </div></div>
+    </div>
+
+    <div class="card" id="ytdSection" style="display: block; margin-top: 16px;">
+      <div class="card-title" id="ytdTitle">Year-to-Date — 20/12/2025 a 02/06/2026</div>
+      <div class="kpis" id="ytdKpis" style="margin-bottom:20px">
+    <div class="kpi">
+      <div class="kpi-label">Consumo Total YTD</div>
+      <div class="kpi-value white">4236</div>
+      <div class="kpi-unit">kWh acumulados</div>
+      <div class="kpi-daily" style="margin-top:8px">Média por ciclo: 706 kWh</div>
+      <div class="kpi-unit" style="margin-top:4px;color:var(--muted)">Média diária: 25.7 kWh/dia</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Custo Total YTD</div>
+      <div class="kpi-value">903.70 €</div>
+      <div class="kpi-unit">tudo incluído c/ IVA</div>
+      <div class="kpi-daily" style="margin-top:8px">Média por ciclo: 150.62 €</div>
+      <div class="kpi-unit" style="margin-top:4px;color:var(--muted)">Média diária: 5.48 €/dia</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Custo Médio YTD por kWh</div>
+      <div class="kpi-value blue">0.2133 €</div>
+      <div class="kpi-unit">€/kWh ponderado real</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Preço Médio OMIE YTD</div>
+      <div class="kpi-value blue">0.0639 €</div>
+      <div class="kpi-unit">€/kWh c/ IVA · custo energia pura</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Custos Fixos YTD</div>
+      <div class="kpi-value" style="font-size:clamp(28px,4vw,44px)">405.84 €</div>
+      <div class="kpi-unit" style="margin-bottom:10px">44.9% do total c/ IVA</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px">Potência + DGEG + CAV c/ IVA</div>
+      <div style="font-size:14px;color:var(--text);font-weight:600">124.23 € <span style="color:var(--muted);font-weight:400;font-size:11px">(13.7%)</span></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px">Base load (1320 kWh · 8 kWh/dia)</div>
+      <div style="font-size:14px;color:var(--text);font-weight:600">281.60 € <span style="color:var(--muted);font-weight:400;font-size:11px">(31.2%)</span></div>
+    </div>
+  </div>
+      <div id="ytdChart" style="width:100%;height:300px"><svg width="100%" height="300" viewBox="0 0 1018 300" xmlns="http://www.w3.org/2000/svg">
+    <line x1="55" y1="216" x2="998" y2="216" stroke="#2a2c30" stroke-width="1"></line><line x1="55" y1="176.8" x2="998" y2="176.8" stroke="#2a2c30" stroke-width="1"></line><line x1="55" y1="137.60000000000002" x2="998" y2="137.60000000000002" stroke="#2a2c30" stroke-width="1"></line><line x1="55" y1="98.4" x2="998" y2="98.4" stroke="#2a2c30" stroke-width="1"></line><line x1="55" y1="59.20000000000002" x2="998" y2="59.20000000000002" stroke="#2a2c30" stroke-width="1"></line><line x1="55" y1="20" x2="998" y2="20" stroke="#2a2c30" stroke-width="1"></line><text x="49" y="220" text-anchor="end" fill="#6b6f77" font-size="10" font-family="Inter,sans-serif">0.0€</text><text x="49" y="180.8" text-anchor="end" fill="#6b6f77" font-size="10" font-family="Inter,sans-serif">57.3€</text><text x="49" y="141.60000000000002" text-anchor="end" fill="#6b6f77" font-size="10" font-family="Inter,sans-serif">114.6€</text><text x="49" y="102.4" text-anchor="end" fill="#6b6f77" font-size="10" font-family="Inter,sans-serif">171.9€</text><text x="49" y="63.20000000000002" text-anchor="end" fill="#6b6f77" font-size="10" font-family="Inter,sans-serif">229.3€</text><text x="49" y="24" text-anchor="end" fill="#6b6f77" font-size="10" font-family="Inter,sans-serif">286.6€</text><rect x="92.72" y="137.9925042807497" width="113.16" height="78.00749571925031" fill="#60c8f0" opacity="0.85" rx="4"></rect><text x="149.3" y="131.9925042807497" text-anchor="middle" fill="#e8e9eb" font-size="13" font-weight="bold" font-family="Inter,sans-serif">114.05 €</text><rect x="281.32" y="108.80881612569401" width="113.16" height="107.19118387430599" fill="#8860f0" opacity="0.85" rx="4"></rect><text x="337.9" y="102.80881612569401" text-anchor="middle" fill="#e8e9eb" font-size="13" font-weight="bold" font-family="Inter,sans-serif">156.72 €</text><rect x="469.91999999999996" y="83.07099614213286" width="113.16" height="132.92900385786714" fill="#c8f060" opacity="0.85" rx="4"></rect><text x="526.5" y="77.07099614213286" text-anchor="middle" fill="#e8e9eb" font-size="13" font-weight="bold" font-family="Inter,sans-serif">194.35 €</text><rect x="658.52" y="171.43743176373044" width="113.16" height="44.56256823626954" fill="#f0c860" opacity="0.85" rx="4"></rect><text x="715.1" y="165.43743176373044" text-anchor="middle" fill="#e8e9eb" font-size="13" font-weight="bold" font-family="Inter,sans-serif">65.15 €</text><rect x="847.12" y="45.565217391304344" width="113.16" height="170.43478260869566" fill="#c860f0" opacity="0.85" rx="4"></rect><text x="903.7" y="39.565217391304344" text-anchor="middle" fill="#e8e9eb" font-size="13" font-weight="bold" font-family="Inter,sans-serif">249.19 €</text><text x="149.3" y="234" text-anchor="middle" fill="#6b6f77" font-size="13" font-family="Inter,sans-serif">00h-03h</text><text x="149.3" y="252" text-anchor="middle" fill="#e8e9eb" font-size="13" font-weight="bold" font-family="Inter,sans-serif">12.6% custo · 13.5% kWh</text><text x="149.3" y="268" text-anchor="middle" fill="#6b6f77" font-size="12" font-family="Inter,sans-serif">Média: 0.2000 €/kWh</text><text x="337.9" y="234" text-anchor="middle" fill="#6b6f77" font-size="13" font-family="Inter,sans-serif">03h-10h</text><text x="337.9" y="252" text-anchor="middle" fill="#e8e9eb" font-size="13" font-weight="bold" font-family="Inter,sans-serif">17.3% custo · 19.7% kWh</text><text x="337.9" y="268" text-anchor="middle" fill="#6b6f77" font-size="12" font-family="Inter,sans-serif">Média: 0.1875 €/kWh</text><text x="526.5" y="234" text-anchor="middle" fill="#6b6f77" font-size="13" font-family="Inter,sans-serif">10h-17h</text><text x="526.5" y="252" text-anchor="middle" fill="#e8e9eb" font-size="13" font-weight="bold" font-family="Inter,sans-serif">21.5% custo · 31.3% kWh</text><text x="526.5" y="268" text-anchor="middle" fill="#6b6f77" font-size="12" font-family="Inter,sans-serif">Média: 0.1466 €/kWh</text><text x="715.1" y="234" text-anchor="middle" fill="#6b6f77" font-size="13" font-family="Inter,sans-serif">17h-19h</text><text x="715.1" y="252" text-anchor="middle" fill="#e8e9eb" font-size="13" font-weight="bold" font-family="Inter,sans-serif">7.2% custo · 9.5% kWh</text><text x="715.1" y="268" text-anchor="middle" fill="#6b6f77" font-size="12" font-family="Inter,sans-serif">Média: 0.1619 €/kWh</text><text x="903.7" y="234" text-anchor="middle" fill="#6b6f77" font-size="13" font-family="Inter,sans-serif">19h-00h</text><text x="903.7" y="252" text-anchor="middle" fill="#e8e9eb" font-size="13" font-weight="bold" font-family="Inter,sans-serif">27.6% custo · 26.0% kWh</text><text x="903.7" y="268" text-anchor="middle" fill="#6b6f77" font-size="12" font-family="Inter,sans-serif">Média: 0.2262 €/kWh</text>
+  </svg></div>
+      <div class="breakdown" id="ytdSummary" style="margin-top:16px"><div class="breakdown-item">
+      <div class="breakdown-label">Madrugada 00h-03h</div>
+      <div class="breakdown-iva">570.3 kWh · 13.5% dos kWh · 12.6% do custo</div>
+      <div class="breakdown-value">114.05 €</div>
+      <div class="breakdown-iva" style="margin-top:2px">Média: 0.2000 €/kWh</div>
+    </div><div class="breakdown-item">
+      <div class="breakdown-label">Base Load 03h-10h</div>
+      <div class="breakdown-iva">835.9 kWh · 19.7% dos kWh · 17.3% do custo</div>
+      <div class="breakdown-value">156.72 €</div>
+      <div class="breakdown-iva" style="margin-top:2px">Média: 0.1875 €/kWh</div>
+    </div><div class="breakdown-item">
+      <div class="breakdown-label">Solar 10h-17h</div>
+      <div class="breakdown-iva">1325.9 kWh · 31.3% dos kWh · 21.5% do custo</div>
+      <div class="breakdown-value">194.35 €</div>
+      <div class="breakdown-iva" style="margin-top:2px">Média: 0.1466 €/kWh</div>
+    </div><div class="breakdown-item">
+      <div class="breakdown-label">Rampa 17h-19h</div>
+      <div class="breakdown-iva">402.4 kWh · 9.5% dos kWh · 7.2% do custo</div>
+      <div class="breakdown-value">65.15 €</div>
+      <div class="breakdown-iva" style="margin-top:2px">Média: 0.1619 €/kWh</div>
+    </div><div class="breakdown-item">
+      <div class="breakdown-label">Pico Noturno 19h-00h</div>
+      <div class="breakdown-iva">1101.5 kWh · 26.0% dos kWh · 27.6% do custo</div>
+      <div class="breakdown-value">249.19 €</div>
+      <div class="breakdown-iva" style="margin-top:2px">Média: 0.2262 €/kWh</div>
+    </div></div>
+    </div>
+
+    <div class="card" id="monthlySection" style="display: block; margin-top: 16px;">
+      <div class="card-title">Evolução por ciclo de faturação — consumo · custo médio · custo mínimo</div>
+      <div id="monthlyChart" style="width:100%;height:380px"><svg width="100%" height="420" viewBox="0 0 1018 420" xmlns="http://www.w3.org/2000/svg">
+    <line x1="62" y1="368" x2="946" y2="368" stroke="#2a2c30" stroke-width="1"></line><line x1="62" y1="286" x2="946" y2="286" stroke="#2a2c30" stroke-width="1"></line><line x1="62" y1="204" x2="946" y2="204" stroke="#2a2c30" stroke-width="1"></line><line x1="62" y1="122" x2="946" y2="122" stroke="#2a2c30" stroke-width="1"></line><line x1="62" y1="40" x2="946" y2="40" stroke="#2a2c30" stroke-width="1"></line><text x="54" y="372" text-anchor="end" fill="#6b6f77" font-size="10" font-family="Inter,sans-serif">0</text><text x="54" y="290" text-anchor="end" fill="#6b6f77" font-size="10" font-family="Inter,sans-serif">323</text><text x="54" y="208" text-anchor="end" fill="#6b6f77" font-size="10" font-family="Inter,sans-serif">646</text><text x="54" y="126" text-anchor="end" fill="#6b6f77" font-size="10" font-family="Inter,sans-serif">969</text><text x="54" y="44" text-anchor="end" fill="#6b6f77" font-size="10" font-family="Inter,sans-serif">1292</text><text x="954" y="372" text-anchor="start" fill="#f0c060" font-size="10" font-family="Inter,sans-serif">0.110</text><text x="954" y="290" text-anchor="start" fill="#f0c060" font-size="10" font-family="Inter,sans-serif">0.155</text><text x="954" y="208" text-anchor="start" fill="#f0c060" font-size="10" font-family="Inter,sans-serif">0.200</text><text x="954" y="126.00000000000003" text-anchor="start" fill="#f0c060" font-size="10" font-family="Inter,sans-serif">0.245</text><text x="954" y="44" text-anchor="start" fill="#f0c060" font-size="10" font-family="Inter,sans-serif">0.290</text><text x="14" y="204" text-anchor="middle" fill="#6b6f77" font-size="10" font-family="Inter,sans-serif" transform="rotate(-90,14,204)">kWh por ciclo</text><text x="1004" y="204" text-anchor="middle" fill="#f0c060" font-size="10" font-family="Inter,sans-serif" transform="rotate(90,1004,204)">€/kWh</text>
+    <rect x="110.66666666666667" y="138.49799532500504" width="50" height="229.50200467499496" fill="#e24b4a" rx="3"></rect><text x="135.66666666666669" y="132.49799532500504" text-anchor="middle" fill="#e8e9eb" font-size="11" font-weight="bold" font-family="Inter,sans-serif">904</text><rect x="258" y="99.14754098360658" width="50" height="268.8524590163934" fill="#e24b4a" rx="3"></rect><text x="283" y="93.14754098360658" text-anchor="middle" fill="#e8e9eb" font-size="11" font-weight="bold" font-family="Inter,sans-serif">1059</text><rect x="255" y="9" width="56" height="16" rx="4" fill="#f0a050" opacity="0.18"></rect><text x="283" y="20" text-anchor="middle" fill="#f0a050" font-size="9" font-weight="bold" font-family="Inter,sans-serif">⚡ Kristin</text><rect x="405.33333333333337" y="187.7495317264973" width="50" height="180.2504682735027" fill="#e24b4a" rx="3"></rect><text x="430.33333333333337" y="181.7495317264973" text-anchor="middle" fill="#e8e9eb" font-size="11" font-weight="bold" font-family="Inter,sans-serif">710</text><rect x="402.33333333333337" y="9" width="56" height="16" rx="4" fill="#f0a050" opacity="0.18"></rect><text x="430.33333333333337" y="20" text-anchor="middle" fill="#f0a050" font-size="9" font-weight="bold" font-family="Inter,sans-serif">⚡ Kristin</text><rect x="552.6666666666666" y="184.70304493877615" width="50" height="183.29695506122385" fill="#e24b4a" rx="3"></rect><text x="577.6666666666666" y="178.70304493877615" text-anchor="middle" fill="#e8e9eb" font-size="11" font-weight="bold" font-family="Inter,sans-serif">722</text><rect x="700" y="229.1309772597099" width="50" height="138.8690227402901" fill="#e24b4a" rx="3"></rect><text x="725" y="223.1309772597099" text-anchor="middle" fill="#e8e9eb" font-size="11" font-weight="bold" font-family="Inter,sans-serif">547</text><rect x="847.3333333333334" y="293.3610737008313" width="50" height="74.63892629916872" fill="#e24b4a" rx="3"></rect><text x="872.3333333333334" y="287.3610737008313" text-anchor="middle" fill="#e8e9eb" font-size="11" font-weight="bold" font-family="Inter,sans-serif">294</text>
+    <polyline points="135.66666666666669,79.20597652081113 283,255.3265741728922 430.33333333333337,183.4927072216293 577.6666666666666,222.8737104233369 725,142.65314834578442 872.3333333333334,179.4816791177517" fill="none" stroke="#f0c060" stroke-width="2"></polyline>
+    <circle cx="135.66666666666669" cy="79.20597652081113" r="4" fill="#f0c060" stroke="#161719" stroke-width="1.5"></circle><circle cx="283" cy="255.3265741728922" r="4" fill="#f0c060" stroke="#161719" stroke-width="1.5"></circle><circle cx="430.33333333333337" cy="183.4927072216293" r="4" fill="#f0c060" stroke="#161719" stroke-width="1.5"></circle><circle cx="577.6666666666666" cy="222.8737104233369" r="4" fill="#f0c060" stroke="#161719" stroke-width="1.5"></circle><circle cx="725" cy="142.65314834578442" r="4" fill="#f0c060" stroke="#161719" stroke-width="1.5"></circle><circle cx="872.3333333333334" cy="179.4816791177517" r="4" fill="#f0c060" stroke="#161719" stroke-width="1.5"></circle><text x="135.66666666666669" y="69.20597652081113" text-anchor="middle" fill="#f0c060" font-size="10" font-weight="bold" font-family="Inter,sans-serif">0.2688</text><text x="283" y="275.3265741728922" text-anchor="middle" fill="#f0c060" font-size="10" font-weight="bold" font-family="Inter,sans-serif">0.1722</text><text x="430.33333333333337" y="173.4927072216293" text-anchor="middle" fill="#f0c060" font-size="10" font-weight="bold" font-family="Inter,sans-serif">0.2116</text><text x="577.6666666666666" y="242.8737104233369" text-anchor="middle" fill="#f0c060" font-size="10" font-weight="bold" font-family="Inter,sans-serif">0.1900</text><text x="725" y="132.65314834578442" text-anchor="middle" fill="#f0c060" font-size="10" font-weight="bold" font-family="Inter,sans-serif">0.2340</text><text x="872.3333333333334" y="199.4816791177517" text-anchor="middle" fill="#f0c060" font-size="10" font-weight="bold" font-family="Inter,sans-serif">0.2138</text>
+    <polyline points="135.66666666666669,349.95037353255066 283,350.4973319103522 430.33333333333337,350.4973319103522 577.6666666666666,350.4973319103522 725,350.4973319103522 872.3333333333334,350.4973319103522" fill="none" stroke="#f0a050" stroke-width="2" stroke-dasharray="5,3"></polyline>
+    <circle cx="135.66666666666669" cy="349.95037353255066" r="3" fill="#f0a050" stroke="#161719" stroke-width="1.5"></circle><circle cx="283" cy="350.4973319103522" r="3" fill="#f0a050" stroke="#161719" stroke-width="1.5"></circle><circle cx="430.33333333333337" cy="350.4973319103522" r="3" fill="#f0a050" stroke="#161719" stroke-width="1.5"></circle><circle cx="577.6666666666666" cy="350.4973319103522" r="3" fill="#f0a050" stroke="#161719" stroke-width="1.5"></circle><circle cx="725" cy="350.4973319103522" r="3" fill="#f0a050" stroke="#161719" stroke-width="1.5"></circle><circle cx="872.3333333333334" cy="350.4973319103522" r="3" fill="#f0a050" stroke="#161719" stroke-width="1.5"></circle><text x="135.66666666666669" y="369.95037353255066" text-anchor="middle" fill="#f0a050" font-size="10" font-weight="bold" font-family="Inter,sans-serif">0.1203</text><text x="283" y="340.4973319103522" text-anchor="middle" fill="#f0a050" font-size="10" font-weight="bold" font-family="Inter,sans-serif">0.1200</text><text x="430.33333333333337" y="370.4973319103522" text-anchor="middle" fill="#f0a050" font-size="10" font-weight="bold" font-family="Inter,sans-serif">0.1200</text><text x="577.6666666666666" y="340.4973319103522" text-anchor="middle" fill="#f0a050" font-size="10" font-weight="bold" font-family="Inter,sans-serif">0.1200</text><text x="725" y="370.4973319103522" text-anchor="middle" fill="#f0a050" font-size="10" font-weight="bold" font-family="Inter,sans-serif">0.1200</text><text x="872.3333333333334" y="340.4973319103522" text-anchor="middle" fill="#f0a050" font-size="10" font-weight="bold" font-family="Inter,sans-serif">0.1200</text>
+    <text x="135.66666666666669" y="390" text-anchor="middle" fill="#6b6f77" font-size="11" font-family="Inter,sans-serif">Dez/Jan</text><text x="283" y="390" text-anchor="middle" fill="#6b6f77" font-size="11" font-family="Inter,sans-serif">Jan/Fev</text><text x="430.33333333333337" y="390" text-anchor="middle" fill="#6b6f77" font-size="11" font-family="Inter,sans-serif">Fev/Mar</text><text x="577.6666666666666" y="390" text-anchor="middle" fill="#6b6f77" font-size="11" font-family="Inter,sans-serif">Mar/Abr</text><text x="725" y="390" text-anchor="middle" fill="#6b6f77" font-size="11" font-family="Inter,sans-serif">Abr/Mai</text><text x="872.3333333333334" y="390" text-anchor="middle" fill="#6b6f77" font-size="11" font-family="Inter,sans-serif">Mai/Jun</text>
+  </svg></div><div class="monthly-legend" style="display: flex; flex-wrap: wrap; gap: 20px; margin-top: 14px; padding-top: 12px; border-top: 1px solid rgb(42, 44, 48);">
+    <span style="display:flex;align-items:center;gap:7px;font-size:12px;color:#6b6f77;">
+      <span style="width:12px;height:12px;border-radius:2px;background:#e24b4a;display:inline-block;flex-shrink:0;"></span>Consumo kWh por ciclo
+    </span>
+    <span style="display:flex;align-items:center;gap:7px;font-size:12px;color:#f0c060;">
+      <span style="display:inline-block;width:18px;height:2px;background:#f0c060;flex-shrink:0;border-radius:1px;"></span>Custo médio real €/kWh (c/ OMIE)
+    </span>
+    <span style="display:flex;align-items:center;gap:7px;font-size:12px;color:#f0a050;">
+      <span style="display:inline-block;width:18px;height:0;border-top:2px dashed #f0a050;flex-shrink:0;"></span>Custo mínimo €/kWh (OMIE = 0)
+    </span>
+  </div>
+    </div>
+
+    <div class="card" id="trendSection" style="display: block; margin-top: 16px;">
+      <div class="card-title">Tendência de consumo por ciclo — kWh · variação % face ao 1.º ciclo</div>
+      <div id="trendChart" style="width:100%;"><svg width="100%" height="380" viewBox="0 0 1018 380" xmlns="http://www.w3.org/2000/svg">
+    <line x1="68" y1="328" x2="946" y2="328" stroke="#2a2c30" stroke-width="1"></line><line x1="68" y1="261" x2="946" y2="261" stroke="#2a2c30" stroke-width="1"></line><line x1="68" y1="194" x2="946" y2="194" stroke="#2a2c30" stroke-width="1"></line><line x1="68" y1="127" x2="946" y2="127" stroke="#2a2c30" stroke-width="1"></line><line x1="68" y1="60" x2="946" y2="60" stroke="#2a2c30" stroke-width="1"></line><line x1="68" y1="142.82705946535734" x2="946" y2="142.82705946535734" stroke="#FF0000" stroke-width="0.8" stroke-dasharray="4,3" opacity="0.5"></line><text x="60" y="332" text-anchor="end" fill="#6b6f77" font-size="10" font-family="Inter,sans-serif">0 kWh</text><text x="60" y="265" text-anchor="end" fill="#6b6f77" font-size="10" font-family="Inter,sans-serif">312 kWh</text><text x="60" y="198" text-anchor="end" fill="#6b6f77" font-size="10" font-family="Inter,sans-serif">625 kWh</text><text x="60" y="131" text-anchor="end" fill="#6b6f77" font-size="10" font-family="Inter,sans-serif">937 kWh</text><text x="60" y="64" text-anchor="end" fill="#6b6f77" font-size="10" font-family="Inter,sans-serif">1250 kWh</text><text x="954" y="332" text-anchor="start" fill="#FF0000" font-size="10" font-family="Inter,sans-serif">-91%</text><text x="954" y="265" text-anchor="start" fill="#FF0000" font-size="10" font-family="Inter,sans-serif">-58%</text><text x="954" y="198" text-anchor="start" fill="#FF0000" font-size="10" font-family="Inter,sans-serif">-25%</text><text x="954" y="131" text-anchor="start" fill="#FF0000" font-size="10" font-family="Inter,sans-serif">+8%</text><text x="954" y="64" text-anchor="start" fill="#FF0000" font-size="10" font-family="Inter,sans-serif">+41%</text><text x="14" y="194" text-anchor="middle" fill="#6b6f77" font-size="10" font-family="Inter,sans-serif" transform="rotate(-90,14,194)">kWh por ciclo</text><text x="1006" y="194" text-anchor="middle" fill="#FF0000" font-size="10" font-family="Inter,sans-serif" transform="rotate(90,1006,194)">variação %</text>
+    <rect x="113.16666666666667" y="134.12346153230578" width="56" height="193.87653846769422" fill="#FFD700" rx="3"></rect><text x="141.16666666666669" y="127.12346153230578" text-anchor="middle" fill="#e8e9eb" font-size="11" font-weight="bold" font-family="Inter,sans-serif">904</text><rect x="259.5" y="100.88135593220338" width="56" height="227.11864406779662" fill="#FFA500" rx="3"></rect><text x="287.5" y="93.88135593220338" text-anchor="middle" fill="#e8e9eb" font-size="11" font-weight="bold" font-family="Inter,sans-serif">1059</text><rect x="405.83333333333337" y="175.72970983178885" width="56" height="152.27029016821115" fill="#FFE033" rx="3"></rect><text x="433.83333333333337" y="168.72970983178885" text-anchor="middle" fill="#e8e9eb" font-size="11" font-weight="bold" font-family="Inter,sans-serif">710</text><rect x="552.1666666666666" y="173.15612746274866" width="56" height="154.84387253725134" fill="#FFE033" rx="3"></rect><text x="580.1666666666666" y="166.15612746274866" text-anchor="middle" fill="#e8e9eb" font-size="11" font-weight="bold" font-family="Inter,sans-serif">722</text><rect x="698.5" y="210.6875370112514" width="56" height="117.31246298874859" fill="#FFE033" rx="3"></rect><text x="726.5" y="203.6875370112514" text-anchor="middle" fill="#e8e9eb" font-size="11" font-weight="bold" font-family="Inter,sans-serif">547</text><rect x="844.8333333333334" y="264.9472319585154" width="56" height="63.05276804148462" fill="#FFE033" rx="3"></rect><text x="872.8333333333334" y="257.9472319585154" text-anchor="middle" fill="#e8e9eb" font-size="11" font-weight="bold" font-family="Inter,sans-serif">294</text>
+    <polyline points="141.16666666666669,142.82705946535734 287.5,108.10256410256409 433.83333333333337,186.48651269927865 580.1666666666666,183.64357155846517 726.5,223.03861308116626 872.8333333333334,279.8974358974359" fill="none" stroke="#FF0000" stroke-width="3"></polyline>
+    <circle cx="141.16666666666669" cy="142.82705946535734" r="5" fill="#FF0000" stroke="#161719" stroke-width="2"></circle><circle cx="287.5" cy="108.10256410256409" r="5" fill="#FF0000" stroke="#161719" stroke-width="2"></circle><circle cx="433.83333333333337" cy="186.48651269927865" r="5" fill="#FF0000" stroke="#161719" stroke-width="2"></circle><circle cx="580.1666666666666" cy="183.64357155846517" r="5" fill="#FF0000" stroke="#161719" stroke-width="2"></circle><circle cx="726.5" cy="223.03861308116626" r="5" fill="#FF0000" stroke="#161719" stroke-width="2"></circle><circle cx="872.8333333333334" cy="279.8974358974359" r="5" fill="#FF0000" stroke="#161719" stroke-width="2"></circle><text x="141.16666666666669" y="126.82705946535734" text-anchor="middle" fill="#FF0000" font-size="11" font-weight="bold" font-family="Inter,sans-serif">+0%</text><text x="287.5" y="130.1025641025641" text-anchor="middle" fill="#FF0000" font-size="11" font-weight="bold" font-family="Inter,sans-serif">+17.1%</text><text x="433.83333333333337" y="170.48651269927865" text-anchor="middle" fill="#FF0000" font-size="11" font-weight="bold" font-family="Inter,sans-serif">-21.5%</text><text x="580.1666666666666" y="205.64357155846517" text-anchor="middle" fill="#FF0000" font-size="11" font-weight="bold" font-family="Inter,sans-serif">-20.1%</text><text x="726.5" y="207.03861308116626" text-anchor="middle" fill="#FF0000" font-size="11" font-weight="bold" font-family="Inter,sans-serif">-39.5%</text><text x="872.8333333333334" y="301.8974358974359" text-anchor="middle" fill="#FF0000" font-size="11" font-weight="bold" font-family="Inter,sans-serif">-67.5%</text>
+    <text x="141.16666666666669" y="350" text-anchor="middle" fill="#6b6f77" font-size="11" font-family="Inter,sans-serif">Dez/Jan</text><text x="287.5" y="350" text-anchor="middle" fill="#6b6f77" font-size="11" font-family="Inter,sans-serif">Jan/Fev</text><text x="433.83333333333337" y="350" text-anchor="middle" fill="#6b6f77" font-size="11" font-family="Inter,sans-serif">Fev/Mar</text><text x="580.1666666666666" y="350" text-anchor="middle" fill="#6b6f77" font-size="11" font-family="Inter,sans-serif">Mar/Abr</text><text x="726.5" y="350" text-anchor="middle" fill="#6b6f77" font-size="11" font-family="Inter,sans-serif">Abr/Mai</text><text x="872.8333333333334" y="350" text-anchor="middle" fill="#6b6f77" font-size="11" font-family="Inter,sans-serif">Mai/Jun</text>
+    <line x1="287.5" y1="44" x2="287.5" y2="90.88135593220338" stroke="#ff4444" stroke-width="1.5" stroke-dasharray="3,2" opacity="0.8"></line><polygon points="283.5,90.88135593220338 291.5,90.88135593220338 287.5,97.88135593220338" fill="#ff4444" opacity="0.9"></polygon><rect x="251.5" y="10" width="72" height="20" rx="10" fill="#ff4444" opacity="0.92"></rect><text x="287.5" y="23" text-anchor="middle" fill="#ffffff" font-size="10" font-weight="bold" font-family="Inter,sans-serif">⚡ Tempestade Kristin</text><line x1="433.83333333333337" y1="44" x2="433.83333333333337" y2="165.72970983178885" stroke="#ff4444" stroke-width="1.5" stroke-dasharray="3,2" opacity="0.8"></line><polygon points="429.83333333333337,165.72970983178885 437.83333333333337,165.72970983178885 433.83333333333337,172.72970983178885" fill="#ff4444" opacity="0.9"></polygon><rect x="397.83333333333337" y="10" width="72" height="20" rx="10" fill="#ff4444" opacity="0.92"></rect><text x="433.83333333333337" y="23" text-anchor="middle" fill="#ffffff" font-size="10" font-weight="bold" font-family="Inter,sans-serif">⚡ Tempestade Kristin</text>
+  </svg>
+  <div style="display:flex;flex-wrap:wrap;gap:20px;margin-top:16px;padding-top:14px;border-top:1px solid #2a2c30;">
+    <span style="display:flex;align-items:center;gap:7px;font-size:12px;color:#6b6f77;">
+      <span style="width:12px;height:12px;border-radius:2px;background:#FFD700;display:inline-block;flex-shrink:0;"></span>1.º ciclo (base de referência)
+    </span>
+    <span style="display:flex;align-items:center;gap:7px;font-size:12px;color:#6b6f77;">
+      <span style="width:12px;height:12px;border-radius:2px;background:#FFE033;display:inline-block;flex-shrink:0;"></span>Consumo abaixo da base
+    </span>
+    <span style="display:flex;align-items:center;gap:7px;font-size:12px;color:#6b6f77;">
+      <span style="width:12px;height:12px;border-radius:2px;background:#FFA500;display:inline-block;flex-shrink:0;"></span>Consumo acima da base
+    </span>
+    <span style="display:flex;align-items:center;gap:7px;font-size:12px;color:#FF0000;">
+      <span style="display:inline-block;width:18px;height:2px;background:#FF0000;flex-shrink:0;border-radius:1px;"></span>Variação % face ao 1.º ciclo (eixo direito)
+    </span>
+    <span style="display:flex;align-items:center;gap:7px;font-size:12px;color:#ff6666;">
+      <span style="display:inline-block;width:12px;height:12px;border-radius:10px;background:#ff4444;flex-shrink:0;"></span>Ciclo afetado pela Tempestade Kristin
+    </span>
+  </div></div>
+    </div>
+
+    <div class="card" id="auditSection" style="display: block; margin-top: 32px; border-top: 2px solid var(--border);">
+      <div class="card-title">Auditoria por ciclo de faturação</div>
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;flex-wrap:wrap">
+        <select id="cycleSelector" onchange="renderAudit(); if(faturaData) renderFaturaComparativo();" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:14px;font-family:&#39;Inter&#39;,sans-serif;cursor:pointer;min-width:200px"><option value="2025-12-20">20/12/2025 → 19/01/2026</option><option value="2026-01-20">20/01/2026 → 19/02/2026</option><option value="2026-02-20">20/02/2026 → 19/03/2026</option><option value="2026-03-20">20/03/2026 → 19/04/2026</option><option value="2026-04-20">20/04/2026 → 19/05/2026</option><option value="2026-05-20">20/05/2026 → 02/06/2026</option></select>
+        <label id="faturaUploadLabel" style="display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px dashed var(--border);border-radius:8px;padding:10px 16px;cursor:pointer;font-size:13px;color:var(--muted);transition:border-color 0.2s" onmouseover="this.style.borderColor=&#39;var(--accent)&#39;" onmouseout="this.style.borderColor=&#39;var(--border)&#39;">
+          <span style="font-size:16px">📄</span>
+          <span id="faturaUploadText">Carregar fatura PDF (Coopérnico)</span>
+          <input type="file" id="faturaInput" accept=".pdf" style="display:none" onchange="handleFaturaUpload(event)">
+        </label>
+        <button id="faturaLimpar" onclick="limparFatura()" style="display:none;background:transparent;border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--muted);cursor:pointer;font-size:13px;font-family:&#39;Inter&#39;,sans-serif">✕ Limpar fatura</button>
+      </div>
+      <div id="faturaComparativo" style="display:none;margin-bottom:24px"></div>
+      <div id="auditContent">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+      <div style="background:var(--surface2);border-radius:10px;padding:14px 16px">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Período</div>
+        <div style="font-size:15px;font-weight:600;color:var(--text)">20/05/2026 → 02/06/2026</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">14 dias</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:10px;padding:14px 16px">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Consumo total</div>
+        <div style="font-size:15px;font-weight:600;color:var(--text)">294 kWh</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">Média: 21.0 kWh/dia</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:10px;padding:14px 16px">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Custo médio</div>
+        <div style="font-size:15px;font-weight:600;color:var(--accent2)">0.2138 €</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">€/kWh ponderado real</div>
+      </div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:16px">
+      <thead>
+        <tr style="border-bottom:1px solid var(--border)">
+          <th style="padding:8px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:500">Componente</th>
+          <th style="padding:8px 12px;text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:500">IVA</th>
+          <th style="padding:8px 12px;text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:500">Valor c/ IVA</th>
+        </tr>
+      </thead>
+      <tbody><tr>
+      <td style="padding:8px 12px;color:var(--text);border-bottom:1px solid var(--border)">Energia OMIE</td>
+      <td style="padding:8px 12px;color:var(--muted);border-bottom:1px solid var(--border);text-align:right">IVA 23%</td>
+      <td style="padding:8px 12px;color:var(--text);border-bottom:1px solid var(--border);text-align:right;font-weight:600">16.94 €</td>
+    </tr><tr>
+      <td style="padding:8px 12px;color:var(--text);border-bottom:1px solid var(--border)">Margem Coopérnico</td>
+      <td style="padding:8px 12px;color:var(--muted);border-bottom:1px solid var(--border);text-align:right">IVA 23%</td>
+      <td style="padding:8px 12px;color:var(--text);border-bottom:1px solid var(--border);text-align:right;font-weight:600">3.77 €</td>
+    </tr><tr>
+      <td style="padding:8px 12px;color:var(--text);border-bottom:1px solid var(--border)">Gest. Sistema (CGS)</td>
+      <td style="padding:8px 12px;color:var(--muted);border-bottom:1px solid var(--border);text-align:right">IVA 23%</td>
+      <td style="padding:8px 12px;color:var(--text);border-bottom:1px solid var(--border);text-align:right;font-weight:600">1.68 €</td>
+    </tr><tr>
+      <td style="padding:8px 12px;color:var(--text);border-bottom:1px solid var(--border)">Tarifa Social (TSE)</td>
+      <td style="padding:8px 12px;color:var(--muted);border-bottom:1px solid var(--border);text-align:right">IVA 23%</td>
+      <td style="padding:8px 12px;color:var(--text);border-bottom:1px solid var(--border);text-align:right;font-weight:600">0.77 €</td>
+    </tr><tr>
+      <td style="padding:8px 12px;color:var(--text);border-bottom:1px solid var(--border)">Garantias Origem (GO)</td>
+      <td style="padding:8px 12px;color:var(--muted);border-bottom:1px solid var(--border);text-align:right">IVA 23%</td>
+      <td style="padding:8px 12px;color:var(--text);border-bottom:1px solid var(--border);text-align:right;font-weight:600">0.54 €</td>
+    </tr><tr>
+      <td style="padding:8px 12px;color:var(--text);border-bottom:1px solid var(--border)">Acesso Redes (TAR)</td>
+      <td style="padding:8px 12px;color:var(--muted);border-bottom:1px solid var(--border);text-align:right">IVA 23%</td>
+      <td style="padding:8px 12px;color:var(--text);border-bottom:1px solid var(--border);text-align:right;font-weight:600">21.91 €</td>
+    </tr><tr>
+      <td style="padding:8px 12px;color:var(--text);border-bottom:1px solid var(--border)">Imp. Esp. Consumo (IEC)</td>
+      <td style="padding:8px 12px;color:var(--muted);border-bottom:1px solid var(--border);text-align:right">IVA 23%</td>
+      <td style="padding:8px 12px;color:var(--text);border-bottom:1px solid var(--border);text-align:right;font-weight:600">0.36 €</td>
+    </tr><tr>
+      <td style="padding:8px 12px;color:var(--text);border-bottom:1px solid var(--border)">Custos Regulação (CR)</td>
+      <td style="padding:8px 12px;color:var(--muted);border-bottom:1px solid var(--border);text-align:right">IVA 23%</td>
+      <td style="padding:8px 12px;color:var(--text);border-bottom:1px solid var(--border);text-align:right;font-weight:600">5.15 €</td>
+    </tr><tr>
+      <td style="padding:8px 12px;color:var(--text);border-bottom:1px solid var(--border)">Custos Sistema (CS)</td>
+      <td style="padding:8px 12px;color:var(--muted);border-bottom:1px solid var(--border);text-align:right">IVA 23%</td>
+      <td style="padding:8px 12px;color:var(--text);border-bottom:1px solid var(--border);text-align:right;font-weight:600">1.04 €</td>
+    </tr><tr>
+      <td style="padding:8px 12px;color:var(--text);border-bottom:1px solid var(--border)">Potência Contratada</td>
+      <td style="padding:8px 12px;color:var(--muted);border-bottom:1px solid var(--border);text-align:right">IVA 23%</td>
+      <td style="padding:8px 12px;color:var(--text);border-bottom:1px solid var(--border);text-align:right;font-weight:600">9.11 €</td>
+    </tr><tr>
+      <td style="padding:8px 12px;color:var(--text);border-bottom:1px solid var(--border)">Taxa DGEG</td>
+      <td style="padding:8px 12px;color:var(--muted);border-bottom:1px solid var(--border);text-align:right">IVA 23%</td>
+      <td style="padding:8px 12px;color:var(--text);border-bottom:1px solid var(--border);text-align:right;font-weight:600">0.09 €</td>
+    </tr><tr>
+      <td style="padding:8px 12px;color:var(--text);border-bottom:1px solid var(--border)">Contrib. Audiovisual (CAV)</td>
+      <td style="padding:8px 12px;color:var(--muted);border-bottom:1px solid var(--border);text-align:right">IVA 6%</td>
+      <td style="padding:8px 12px;color:var(--text);border-bottom:1px solid var(--border);text-align:right;font-weight:600">1.39 €</td>
+    </tr></tbody>
+    </table>
+    <div style="background:var(--surface2);border:1px solid var(--accent);border-radius:10px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+      <div style="font-size:13px;color:var(--muted)">Total calculado c/ IVA</div>
+      <div style="font-size:22px;font-weight:800;color:var(--accent)">62.76 €</div>
+    </div>
+
+    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;font-weight:600">Decomposição por categoria</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:8px">
+      <div style="background:var(--surface2);border-radius:10px;padding:16px">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Custos variáveis</div>
+        <div style="font-size:22px;font-weight:800;color:#f06060">52.17 €</div>
+        <div style="font-size:13px;color:#f06060;font-weight:600;margin-top:4px">83.1% do total</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.6">Energia OMIE + Margem + CGS + TSE + GO + TAR + IEC + CR + CS + IVA 23%</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:10px;padding:16px">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Custos fixos</div>
+        
+            <div style="font-size:22px;font-weight:800;color:var(--accent2)">34.53 €</div>
+            <div style="font-size:13px;color:var(--accent2);font-weight:600;margin-top:4px">55.0% do total</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:10px">Potência + DGEG + CAV c/ IVA</div>
+            <div style="font-size:13px;color:var(--text);font-weight:600;margin-top:2px">10.58 € <span style="color:var(--muted);font-weight:400;font-size:11px">(16.9%)</span></div>
+            <div style="font-size:11px;color:var(--muted);margin-top:6px">Base load (112 kWh · 8 kWh/dia)</div>
+            <div style="font-size:13px;color:var(--text);font-weight:600;margin-top:2px">23.95 € <span style="color:var(--muted);font-weight:400;font-size:11px">(38.2%)</span></div>
+          
+      </div>
+      <div style="background:var(--surface2);border-radius:10px;padding:16px;border:1px solid var(--accent)">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Custo evitável por kWh</div>
+        <div style="font-size:22px;font-weight:800;color:var(--accent)">0.1777 €</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:8px;line-height:1.6">Por cada kWh que não consomes, poupas exactamente este valor na factura</div>
+      </div>
+    </div>
+  </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+// Coopernico GO E2.0 — BTN — 10.35 kVA
+// Tarifas variáveis por período — fontes: facturas Coopérnico reais
+const TARIFF_HISTORY = [
+  // { from: 'YYYY-MM-DD', TSE, TAR, CR, CS }
+  // Até 31/12/2025 (valores faturados em Dez 2025)
+  { from: '2025-01-01', TSE: 0.001657, TAR: 0.060000, CR: 0.013853, CS: 0.004955 },
+  // A partir de 01/01/2026 (valores faturados em Jan 2026)
+  { from: '2026-01-01', TSE: 0.002141, TAR: 0.060700, CR: 0.014266, CS: 0.002893 },
+];
+
+// Retorna as tarifas variáveis correctas para uma data YYYY-MM-DD
+function getTariffForDate(dateStr) {
+  let t = TARIFF_HISTORY[0];
+  for (const entry of TARIFF_HISTORY) {
+    if (dateStr >= entry.from) t = entry;
+  }
+  return t;
+}
+
+// Tarifas fixas (independentes da data)
+const TARIFF = {
+  k:            0.009,    // margem Coopérnico €/kWh — IVA 23%
+  CGS:          0.004,    // custos gestão sistema €/kWh — IVA 23%
+  GO:           0.0015,   // garantias de origem €/kWh — IVA 23%
+  FP:           0.16,     // fator de perdas
+  IEC:          0.001,    // imposto especial consumo €/kWh — IVA 23%
+  potencia_dia: 0.5289,   // potência contratada €/dia — IVA 23% (redes 0.50 + comercializador 0.0289)
+  CAV_dia:      2.85 * 12 / 365.25, // contribuição audiovisual €/dia s/ IVA — IVA 6%
+  DGEG_mes:     0.07,     // taxa DGEG €/mês — IVA 23%
+  IVA23:        0.23,
+  IVA6:         0.06,
+};
+
+// Supabase config
+const SUPABASE_URL = 'https://fmwndkwcuqemcqgociqf.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZtd25ka3djdXFlbWNxZ29jaXFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzODA2OTksImV4cCI6MjA5MDk1NjY5OX0.DMXs-TZSQNvVdb-IObl3xs56LLFt3CF6thfcPdUQjEU';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { persistSession: false }
+});
+
+let consumoData = null;
+let omieData = {};
+let currentDates = [];
+let allMonthsData = {}; // { "2026-01": { dates, intervals }, ... }
+
+// Save data to Supabase
+async function saveToSupabase() {
+  try {
+    // Delete existing data first
+    await sb.from('energia_dados').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    // Save all months
+    const meses = Object.keys(allMonthsData).sort();
+    if (meses.length === 0) return;
+    const payload = {
+      mes: meses.join(','),
+      dados: {
+        allMonthsData: Object.fromEntries(
+          Object.entries(allMonthsData).map(([k, v]) => [k, {
+            targetMonth: v.targetMonth,
+            dates: v.dates,
+            dailyKwh: v.dailyKwh,
+            intervals: v.intervals
+          }])
+        ),
+        omieData
+      }
+    };
+    await sb.from('energia_dados').insert(payload);
+    console.log('Dados guardados no Supabase');
+    setOmieStatus('ok', 'Dados guardados — disponíveis em todos os dispositivos');
+  } catch(e) {
+    console.error('Erro ao guardar:', e);
+  }
+}
+
+// Load data from Supabase on page load
+async function loadFromSupabase() {
+  try {
+    const { data, error } = await sb.from('energia_dados').select('*').order('criado_em', { ascending: false }).limit(1);
+    if (error) { setOmieStatus('fail', 'Erro ao carregar do Supabase: ' + error.message); return; }
+    if (!data || data.length === 0) { setOmieStatus('fail', 'Sem dados no Supabase'); return; }
+    const saved = data[0].dados;
+    if (!saved || !saved.allMonthsData) { setOmieStatus('fail', 'Dados inválidos no Supabase'); return; }
+
+    allMonthsData = saved.allMonthsData;
+    omieData = saved.omieData || {};
+
+    const cycles = Object.keys(allMonthsData).sort();
+    if (cycles.length === 0) return;
+
+    const current = allMonthsData[cycles[cycles.length - 1]];
+    consumoData = current;
+    currentDates = current.dates;
+
+    const first = current.dates[0], last = current.dates[current.dates.length - 1];
+    document.getElementById('periodLabel').textContent = fmt(first) + ' → ' + fmt(last);
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    setOmieStatus('ok', 'Dados carregados do Supabase — ' + cycles.length + ' ciclos de faturação');
+    computeAndRender();
+  } catch(e) {
+    console.error('Erro ao carregar:', e);
+  }
+}
+
+function showError(msg) {
+  const b = document.getElementById('errorBox');
+  b.textContent = msg; b.style.display = 'block';
+}
+function clearError() { document.getElementById('errorBox').style.display = 'none'; }
+
+// Returns billing cycle key "YYYY-MM-DD" (the day-20 start) for a given date string "YYYY-MM-DD"
+function billingCycleKey(dateStr) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  if (d >= 20) {
+    // cycle starts this month on the 20th
+    return `${String(y).padStart(4,'0')}-${String(m).padStart(2,'0')}-20`;
+  } else {
+    // cycle started on the 20th of the previous month
+    const dt = new Date(y, m - 2, 20); // month is 0-based, so m-2 = previous month
+    return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-20`;
+  }
+}
+
+function parseExcelFile(arrayBuffer) {
+  const wb = XLSX.read(arrayBuffer, { type: 'array' });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const raw = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+  let startRow = -1;
+  for (let i = 0; i < raw.length; i++) {
+    if (raw[i][0] === 'Data' && raw[i][1] === 'Hora') { startRow = i + 1; break; }
+  }
+  if (startRow === -1) return null;
+
+  const allIntervals = [];
+  for (let i = startRow; i < raw.length; i++) {
+    const row = raw[i];
+    if (!row[0] || !row[1] || row[2] === undefined) continue;
+    const dateStr = String(row[0]).trim();
+    const hora = String(row[1]).trim();
+    const kwh = parseFloat(String(row[2]).replace(",", "."));
+    if (isNaN(kwh)) continue;
+    allIntervals.push({ date: dateStr.replace(/\//g, '-'), hora, kwh });
+  }
+  if (allIntervals.length === 0) return null;
+
+  // Discard anything before 20/12/2025 — that's before our first billing cycle
+  const MIN_DATE = '2025-12-20';
+  const filtered = allIntervals.filter(r => r.date >= MIN_DATE);
+  if (filtered.length === 0) return null;
+
+  // Return all intervals raw — grouping into billing cycles is done in onAllFilesLoaded
+  return { intervals: filtered };
+}
+
+function groupIntoBillingCycles(allIntervals) {
+  // Group intervals by billing cycle (20th → 19th of next month)
+  const cycleIntervals = {};
+  allIntervals.forEach(r => {
+    const key = billingCycleKey(r.date);
+    if (!cycleIntervals[key]) cycleIntervals[key] = [];
+    cycleIntervals[key].push(r);
+  });
+
+  const cycles = {};
+  Object.entries(cycleIntervals).forEach(([key, intervals]) => {
+    const byDay = {};
+    intervals.forEach(r => {
+      if (!byDay[r.date]) byDay[r.date] = 0;
+      byDay[r.date] += r.kwh * 0.25;
+    });
+
+    const intervalsPerDay = {};
+    intervals.forEach(r => { intervalsPerDay[r.date] = (intervalsPerDay[r.date] || 0) + 1; });
+
+    let dates = Object.keys(byDay).sort();
+    // Remove last day if it has incomplete data (< 86 intervals = < 21.5h)
+    // BUT only for the most recent cycle (current period)
+    const lastDate = dates[dates.length - 1];
+    if (intervalsPerDay[lastDate] < 86) dates = dates.slice(0, -1);
+
+    if (dates.length === 0) return;
+
+    cycles[key] = {
+      targetMonth: key, // reuse field name for compatibility
+      dates,
+      dailyKwh: dates.map(d => byDay[d]),
+      intervals: intervals.filter(r => dates.includes(r.date))
+    };
+  });
+
+  return cycles;
+}
+
+function handleFile(event) {
+  clearError();
+  const files = Array.from(event.target.files);
+  if (!files.length) return;
+
+  let pending = files.length;
+  const results = [];
+
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const parsed = parseExcelFile(e.target.result);
+        if (parsed) results.push(parsed);
+      } catch(err) { /* skip bad file */ }
+      pending--;
+      if (pending === 0) onAllFilesLoaded(results);
+    };
+    reader.readAsArrayBuffer(file);
+  });
+  event.target.value = '';
+}
+
+function onAllFilesLoaded(results) {
+  if (results.length === 0) { showError('Nenhum ficheiro válido encontrado.'); return; }
+
+  // Merge all raw intervals from all uploaded files
+  const allIntervals = results.flatMap(r => r.intervals);
+
+  // Group into billing cycles (20th -> 19th)
+  allMonthsData = groupIntoBillingCycles(allIntervals);
+
+  const cycles = Object.keys(allMonthsData).sort();
+  if (cycles.length === 0) { showError('Sem dados válidos para processar.'); return; }
+
+  // Most recent cycle = current view
+  const current = allMonthsData[cycles[cycles.length - 1]];
+  consumoData = current;
+  currentDates = current.dates;
+
+  const first = current.dates[0], last = current.dates[current.dates.length - 1];
+  document.getElementById('periodLabel').textContent = `${fmt(first)} → ${fmt(last)}`;
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+
+  // Fetch OMIE for all dates across all cycles
+  const allDates = cycles.flatMap(k => allMonthsData[k].dates);
+  fetchOmie(allDates);
+}
+
+function fmt(d) {
+  const [y,m,day] = d.split('-');
+  return `${day}/${m}/${y}`;
+}
+
+function retryOmie() {
+  if (currentDates.length > 0) fetchOmie(currentDates);
+}
+
+async function fetchOmie(dates) {
+  setOmieStatus('loading', 'A carregar preços OMIE...');
+  document.getElementById('retryBtn').classList.remove('visible');
+  omieData = {};
+  let ok = 0;
+
+  await Promise.all(dates.map(async date => {
+    const [y, m, d] = date.split('-');
+    const fname = `${y}${m}${d}`;
+    const url = `https://omie-proxy.hugo-gracio-costa.workers.dev/?date=${fname}`;
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+      if (!res.ok) throw new Error();
+      const text = await res.text();
+      const prices = parseOmieFile(text);
+      if (prices) { omieData[date] = prices; ok++; }
+    } catch { /* silent */ }
+  }));
+
+  if (ok === 0) {
+    setOmieStatus('fail', 'Preços OMIE indisponíveis — dias sem preço OMIE');
+    dates.forEach(d => { omieData[d] = Array(96).fill(0); });
+    document.getElementById('retryBtn').classList.add('visible');
+  } else if (ok < dates.length) {
+    setOmieStatus('fail', `Atenção: OMIE incompleto — ${ok}/${dates.length} dias com dados reais`);
+  } else {
+    setOmieStatus('ok', `Preços OMIE reais carregados (${ok}/${dates.length} dias)`);
+  }
+
+  computeAndRender();
+  saveToSupabase();
+}
+
+function parseOmieFile(text) {
+  // Format: MARGINALPDBCPT; / year;month;day;period(1-96);priceES;pricePT;
+  // 96 periods of 15min, PT = ES - 1h (4 periods)
+  const prices96 = new Array(96).fill(null);
+  for (const line of text.split('\n')) {
+    const parts = line.split(';').map(s => s.trim());
+    if (parts.length < 6) continue;
+    const period = parseInt(parts[3]);
+    if (isNaN(period) || period < 1 || period > 96) continue;
+    const pricePT = parseFloat(parts[5].replace(',', '.'));
+    if (!isNaN(pricePT)) prices96[period - 1] = pricePT;
+  }
+  if (prices96.every(p => p === null)) return null;
+  // Fill any nulls with 0
+  return prices96.map(p => p !== null ? p : 0);
+}
+
+function setOmieStatus(state, msg) {
+  document.getElementById('omieStatusDot').className = 'status-dot ' + (state === 'ok' ? 'ok' : state === 'loading' ? 'loading' : '');
+  document.getElementById('omieStatusText').textContent = msg;
+}
+
+function computeAndRender() {
+  if (!consumoData) return;
+
+  const { dates, intervals } = consumoData;
+  const numDays = dates.length;
+  const lastDay = fmt(dates[dates.length - 1]);
+  const dateLabel = `Calculado até ${lastDay}`;
+
+  let totalKwh = 0;
+  let kwhLastDay = 0;
+  const lastDate = dates[dates.length - 1];
+  // Componentes s/ IVA (todas sujeitas a 23% exceto CAV)
+  let omieTotal = 0;   // custo OMIE puro
+  let margemCoop = 0;  // margem Coopérnico
+  let cgsTotal = 0;    // CGS
+  let tseTotal = 0;    // tarifa social
+  let goTotal = 0;     // garantias de origem
+  let tarTotal = 0;    // acesso redes
+  let iecTotal = 0;    // imposto especial consumo
+  let crTotal = 0;     // custos regulação
+  let csTotal = 0;     // custos sistema
+
+  intervals.forEach(r => {
+    const kwhI = r.kwh * 0.25;
+    const [hh, mm] = r.hora.split(':').map(Number);
+    const periodES = (hh * 4) + Math.floor(mm / 15);
+    const periodPT = (periodES - 4 + 96) % 96;
+    const prices = omieData[r.date];
+    const omie = prices ? prices[periodPT] / 1000 : 0;
+
+    // Tarifas correctas para esta data
+    const t = getTariffForDate(r.date);
+
+    omieTotal   += kwhI * omie * (1 + TARIFF.FP);
+    margemCoop  += kwhI * TARIFF.k * (1 + TARIFF.FP);
+    cgsTotal    += kwhI * TARIFF.CGS * (1 + TARIFF.FP);
+    tseTotal    += kwhI * t.TSE;
+    goTotal     += kwhI * TARIFF.GO;
+    tarTotal    += kwhI * t.TAR;
+    iecTotal    += kwhI * TARIFF.IEC;
+    crTotal     += kwhI * t.CR;
+    csTotal     += kwhI * t.CS;
+    totalKwh    += kwhI;
+    if (r.date === lastDate) kwhLastDay += kwhI;
+  });
+
+  const potenciaSemIVA = numDays * TARIFF.potencia_dia;
+  const dgegSemIVA = TARIFF.DGEG_mes;
+  // CAV calculado por dia real do ciclo (não fixo por mês)
+  const cavSemIVA = TARIFF.CAV_dia * numDays;
+
+  // Tudo a 23% exceto CAV (6%)
+  const v = (x) => x * (1 + TARIFF.IVA23);
+  const totalSemCAV = omieTotal + margemCoop + cgsTotal + tseTotal + goTotal +
+                      tarTotal + iecTotal + crTotal + csTotal +
+                      potenciaSemIVA + dgegSemIVA;
+  const iva23Total = totalSemCAV * TARIFF.IVA23;
+  const iva6CAV = cavSemIVA * TARIFF.IVA6;
+  const totalComIVA = totalSemCAV + iva23Total + cavSemIVA + iva6CAV;
+  const custoMedio = totalKwh > 0 ? totalComIVA / totalKwh : 0;
+
+  // Custo mínimo por kWh (OMIE = 0): componentes variáveis que dependem do kWh, sem OMIE
+  // k + CGS (com FP) + GO + TSE + TAR + IEC + CR + CS — tudo com IVA 23%
+  const tdMin = getTariffForDate(dates[dates.length - 1]);
+  const custoMinSemIVA = (TARIFF.k + TARIFF.CGS) * (1 + TARIFF.FP) + tdMin.TSE
+                        + TARIFF.GO
+                        + tdMin.TAR + TARIFF.IEC + tdMin.CR + tdMin.CS;
+  const custoMin = custoMinSemIVA * (1 + TARIFF.IVA23);
+
+  // KPIs
+  const mediaKwhDia = totalKwh / numDays;
+  const mediaCustoDia = totalComIVA / numDays;
+
+  document.getElementById('kpiKwh').textContent = totalKwh.toFixed(0);
+  document.getElementById('kpiCost').textContent = totalComIVA.toFixed(2) + ' €';
+  document.getElementById('kpiAvg').textContent = custoMedio.toFixed(4) + ' €';
+  document.getElementById('kpiMin').textContent = custoMin.toFixed(4) + ' €';
+  document.getElementById('kpiMinDate').textContent = dateLabel;
+  // Month name in Portuguese
+  const monthNames = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const [ly, lm, ld] = dates[dates.length - 1].split('-');
+  const monthName = monthNames[parseInt(lm) - 1];
+  document.getElementById('kpiLastDay').textContent = kwhLastDay.toFixed(1);
+  document.getElementById('kpiLastDayDate').textContent = `${parseInt(ld)} ${monthName} ${ly}`;
+  document.getElementById('breakdownTitle').textContent = `Decomposição do custo — ${monthName}, até dia ${parseInt(ld)}`;
+  const firstDay = fmt(dates[0]);
+  document.getElementById('kpiKwhDate').textContent = `Calculado de ${firstDay} até ${lastDay}`;
+  document.getElementById('kpiCostDate').textContent = dateLabel;
+  document.getElementById('kpiAvgDate').textContent = dateLabel;
+  document.getElementById('kpiKwhDaily').textContent = `Média diária: ${mediaKwhDia.toFixed(1)} kWh/dia`;
+  document.getElementById('kpiCostDaily').textContent = `Média diária: ${mediaCustoDia.toFixed(2)} €/dia`;
+  const daysInMonth = new Date(parseInt(ly), parseInt(lm), 0).getDate();
+  document.getElementById('kpiKwhEstimateLabel').textContent = `Estimativa ${daysInMonth} dias`;
+  document.getElementById('kpiKwhEstimate').textContent = `${(mediaKwhDia * daysInMonth).toFixed(0)} kWh`;
+  document.getElementById('kpiCostEstimateLabel').textContent = `Estimativa ${daysInMonth} dias`;
+  document.getElementById('kpiCostEstimate').textContent = `${(mediaCustoDia * daysInMonth).toFixed(2)} €`;
+  // Billing cycle always closes on the 19th of the month after the cycle start (day 20)
+  // Cycle start = day 20 of the first date's month
+  const [fy, fm] = dates[0].split('-').map(Number);
+  const closeDate = new Date(fy, fm, 19); // day 19 of month after cycle start (month is 0-based so fm = next month)
+  const emitDate = new Date(closeDate); emitDate.setDate(closeDate.getDate() + 8);
+  const payDate = new Date(emitDate); payDate.setDate(emitDate.getDate() + 30);
+  const fmtD = d => String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear();
+  document.getElementById('kpiKwhPayLabel').textContent = 'Data limite de pagamento';
+  document.getElementById('kpiKwhPayDate').textContent = fmtD(payDate);
+
+  // Breakdown — um balão por item com IVA discriminado
+  const items = [
+    { label: 'Energia OMIE',           val: omieTotal,       iva: '23%' },
+    { label: 'Margem Coopérnico',       val: margemCoop,      iva: '23%' },
+    { label: 'Gest. Sistema (CGS)',     val: cgsTotal,        iva: '23%' },
+    { label: 'Tarifa Social (TSE)',     val: tseTotal,        iva: '23%' },
+    { label: 'Garantias Origem (GO)',   val: goTotal,         iva: '23%' },
+    { label: 'Acesso Redes (TAR)',      val: tarTotal,        iva: '23%' },
+    { label: 'Imp. Esp. Consumo (IEC)',val: iecTotal,        iva: '23%' },
+    { label: 'Custos Regulação (CR)',   val: crTotal,         iva: '23%' },
+    { label: 'Custos Sistema (CS)',     val: csTotal,         iva: '23%' },
+    { label: 'Potência Contratada',     val: potenciaSemIVA,  iva: '23%' },
+    { label: 'Taxa DGEG',              val: dgegSemIVA,      iva: '23%' },
+    { label: 'Contrib. Audiovisual',    val: cavSemIVA,       iva: '6%'  },
+  ];
+
+  const breakdownHtml = items.map(item => {
+    const ivaRate = item.iva === '23%' ? TARIFF.IVA23 : TARIFF.IVA6;
+    const comIVA = item.val * (1 + ivaRate);
+    return `
+      <div class="breakdown-item">
+        <div class="breakdown-label">${item.label}</div>
+        <div class="breakdown-iva">IVA ${item.iva} incluído</div>
+        <div class="breakdown-value">${comIVA.toFixed(2)} €</div>
+      </div>`;
+  }).join('');
+
+  const totalHtml = `
+    <div class="breakdown-item total">
+      <div class="breakdown-label">Total c/ IVA</div>
+      <div class="breakdown-iva">${lastDay}</div>
+      <div class="breakdown-value">${totalComIVA.toFixed(2)} €</div>
+    </div>`;
+
+  document.getElementById('breakdown').innerHTML = breakdownHtml + totalHtml;
+
+  // Períodos de consumo
+  const periodoKeys = ['Madrugada\n00h-03h', 'Base Load\n03h-10h', 'Solar\n10h-17h', 'Rampa\n17h-19h', 'Pico Noturno\n19h-00h'];
+  const periodos = {};
+  const periodosCost = {};
+  periodoKeys.forEach(k => { periodos[k] = 0; periodosCost[k] = 0; });
+
+  consumoData.intervals.forEach(r => {
+    const hh = parseInt(r.hora.split(':')[0]);
+    const kwhI = r.kwh * 0.25;
+    const [rhh, rmm] = r.hora.split(':').map(Number);
+    const periodES = (rhh * 4) + Math.floor(rmm / 15);
+    const periodPT = (periodES - 4 + 96) % 96;
+    const prices = omieData[r.date];
+    const omie = prices ? prices[periodPT] / 1000 : 0;
+    const td = getTariffForDate(r.date);
+    const precoEnergia = ((omie + TARIFF.CGS + TARIFF.k) * (1 + TARIFF.FP)) + TARIFF.GO;
+    const variaveis = precoEnergia + td.TAR + TARIFF.IEC + td.CR + td.CS + td.TSE;
+    const custoInterval = kwhI * variaveis * (1 + TARIFF.IVA23);
+
+    let key;
+    if (hh < 3) key = 'Madrugada\n00h-03h';
+    else if (hh < 10) key = 'Base Load\n03h-10h';
+    else if (hh < 17) key = 'Solar\n10h-17h';
+    else if (hh < 19) key = 'Rampa\n17h-19h';
+    else key = 'Pico Noturno\n19h-00h';
+    periodos[key] += kwhI;
+    periodosCost[key] += custoInterval;
+  });
+
+  document.getElementById('periodosTitle').textContent = `Custo por período do dia — ${monthName}, até dia ${parseInt(ld)}`;
+
+  // SVG bar chart — no external dependencies
+  (function() {
+    const el = document.getElementById('periodosChart');
+    const W = el.getBoundingClientRect().width || window.innerWidth - 64 || 320;
+    const H = 300;
+    const padL = 55, padR = 20, padT = 20, padB = 84;
+    const chartW = W - padL - padR;
+    const chartH = H - padT - padB;
+    const colors = ['#60c8f0','#8860f0','#c8f060','#f0c860','#c860f0'];
+    const values = periodoKeys.map(k => periodosCost[k]);
+    const maxVal = Math.max(...values) * 1.15;
+    const n = periodoKeys.length;
+    const barW = chartW / n * 0.6;
+    const gap = chartW / n;
+    const totalKwhPeriodos = periodoKeys.reduce((s, k) => s + periodos[k], 0);
+
+    // Y axis ticks
+    const ticks = 5;
+    let yLines = '';
+    let yLabels = '';
+    for (let i = 0; i <= ticks; i++) {
+      const v = (maxVal / ticks * i);
+      const y = padT + chartH - (v / maxVal * chartH);
+      yLines += `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="#2a2c30" stroke-width="1"/>`;
+      yLabels += `<text x="${padL - 6}" y="${y + 4}" text-anchor="end" fill="#6b6f77" font-size="10" font-family="Inter,sans-serif">${v.toFixed(1)}€</text>`;
+    }
+
+    // Bars
+    let bars = '';
+    let xlabels = '';
+    values.forEach((v, i) => {
+      const x = padL + gap * i + (gap - barW) / 2;
+      const bh = (v / maxVal) * chartH;
+      const y = padT + chartH - bh;
+      const pct = totalComIVA > 0 ? (v / totalComIVA * 100).toFixed(1) : 0;
+      const key = periodoKeys[i];
+      const kwh = periodos[key];
+      const pctKwh = totalKwhPeriodos > 0 ? (kwh / totalKwhPeriodos * 100).toFixed(1) : 0;
+      const avg = kwh > 0 ? v / kwh : 0;
+      bars += `<rect x="${x}" y="${y}" width="${barW}" height="${bh}" fill="${colors[i]}" opacity="0.85" rx="4"/>`;
+      bars += `<text x="${x + barW/2}" y="${y - 6}" text-anchor="middle" fill="#e8e9eb" font-size="13" font-weight="bold" font-family="Inter,sans-serif">${v.toFixed(2)} €</text>`;
+      const timeLabel = key.split('\n')[1]; // only the time range e.g. "06h-10h"
+      const lx = x + barW / 2;
+      const ly = padT + chartH + 18;
+      xlabels += `<text x="${lx}" y="${ly}" text-anchor="middle" fill="#6b6f77" font-size="13" font-family="Inter,sans-serif">${timeLabel}</text>`;
+      xlabels += `<text x="${lx}" y="${ly + 18}" text-anchor="middle" fill="#e8e9eb" font-size="13" font-weight="bold" font-family="Inter,sans-serif">${pct}% custo · ${pctKwh}% kWh</text>`;
+      xlabels += `<text x="${lx}" y="${ly + 34}" text-anchor="middle" fill="#6b6f77" font-size="12" font-family="Inter,sans-serif">Média: ${avg.toFixed(4)} €/kWh</text>`;
+    });
+
+    el.innerHTML = `<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+      ${yLines}${yLabels}${bars}${xlabels}
+    </svg>`;
+  })();
+
+  // Period summary boxes
+  const periodoSummaryHtml = periodoKeys.map(k => {
+    const kwh = periodos[k];
+    const cost = periodosCost[k];
+    const avg = kwh > 0 ? cost / kwh : 0;
+    const pct = totalComIVA > 0 ? (cost / totalComIVA * 100).toFixed(1) : 0;
+    const totalKwhPeriodosBox = periodoKeys.reduce((s, pk) => s + periodos[pk], 0);
+    const pctKwh = totalKwhPeriodosBox > 0 ? (kwh / totalKwhPeriodosBox * 100).toFixed(1) : 0;
+    const label = k.replace('\n', ' ');
+    return `<div class="breakdown-item">
+      <div class="breakdown-label">${label}</div>
+      <div class="breakdown-iva">${kwh.toFixed(1)} kWh · ${pctKwh}% dos kWh · ${pct}% do custo</div>
+      <div class="breakdown-value">${cost.toFixed(2)} €</div>
+      <div class="breakdown-iva" style="margin-top:2px">Média: ${avg.toFixed(4)} €/kWh</div>
+    </div>`;
+  }).join('');
+  document.getElementById('periodoSummary').innerHTML = periodoSummaryHtml;
+
+  // Fixed costs big card
+  const BASE_LOAD_KWH_DIA = 8; // base load estimada — equipamentos sempre ligados (frio, câmeras, stand-bys)
+  const baseLoadKwh = BASE_LOAD_KWH_DIA * numDays;
+  const baseLoadCost = baseLoadKwh * custoMedio; // custo ao preço médio do período
+  const contratuaisCost = (potenciaSemIVA + dgegSemIVA) * (1 + TARIFF.IVA23) + cavSemIVA * (1 + TARIFF.IVA6);
+  const fixosCost = contratuaisCost + baseLoadCost;
+  const fixosPct = totalComIVA > 0 ? (fixosCost / totalComIVA * 100).toFixed(1) : 0;
+  const contratuaisPct = totalComIVA > 0 ? (contratuaisCost / totalComIVA * 100).toFixed(1) : 0;
+  const baseLoadPct = totalComIVA > 0 ? (baseLoadCost / totalComIVA * 100).toFixed(1) : 0;
+  document.getElementById('fixosCard').innerHTML = `
+    <div class="kpi-label">Custos Fixos</div>
+    <div class="kpi-value" style="font-size:clamp(28px,4vw,44px)">${fixosCost.toFixed(2)} €</div>
+    <div class="kpi-unit" style="margin-bottom:10px">${fixosPct}% do total c/ IVA</div>
+    <div style="font-size:12px;color:var(--muted);margin-top:6px">Potência + DGEG + CAV c/ IVA</div>
+    <div style="font-size:14px;color:var(--text);font-weight:600">${contratuaisCost.toFixed(2)} € <span style="color:var(--muted);font-weight:400;font-size:11px">(${contratuaisPct}%)</span></div>
+    <div style="font-size:12px;color:var(--muted);margin-top:6px">Base load estimada (${baseLoadKwh.toFixed(0)} kWh · ${BASE_LOAD_KWH_DIA} kWh/dia)</div>
+    <div style="font-size:14px;color:var(--text);font-weight:600">${baseLoadCost.toFixed(2)} € <span style="color:var(--muted);font-weight:400;font-size:11px">(${baseLoadPct}%)</span></div>
+  `;
+
+  // OMIE average cost per kWh
+  const omieAvgKwh = totalKwh > 0 ? (omieTotal * (1 + TARIFF.IVA23)) / totalKwh : 0;
+  document.getElementById('omieAvgCard').innerHTML = `
+    <div class="kpi-label">Preço Médio OMIE</div>
+    <div class="kpi-value blue" style="font-size:clamp(28px,4vw,44px)">${omieAvgKwh.toFixed(4)} €</div>
+    <div class="kpi-unit">€/kWh c/ IVA · custo energia pura</div>
+    <div class="kpi-date">${dateLabel}</div>
+  `;
+
+  renderYTD();
+  renderTrendChart();
+  populateCycleSelector();
+
+}
+
+function renderYTD() {
+  const months = Object.keys(allMonthsData).sort();
+  if (months.length < 2) {
+    document.getElementById('ytdSection').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('ytdSection').style.display = 'block';
+
+  const monthNames = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const ytdPeriodoKeys = ['Madrugada\n00h-03h', 'Base Load\n03h-10h', 'Solar\n10h-17h', 'Rampa\n17h-19h', 'Pico Noturno\n19h-00h'];
+  const ytdPeriodos = {};
+  const ytdPeriodosCost = {};
+  ytdPeriodoKeys.forEach(k => { ytdPeriodos[k] = 0; ytdPeriodosCost[k] = 0; });
+
+  let ytdKwh = 0, ytdVariavelCost = 0, ytdNumDays = 0, ytdOmieTotal = 0;
+
+  months.forEach(ym => {
+    const m = allMonthsData[ym];
+    ytdNumDays += m.dates.length;
+    m.intervals.forEach(r => {
+      const kwhI = r.kwh * 0.25;
+      const [rhh, rmm] = r.hora.split(':').map(Number);
+      const periodES = (rhh * 4) + Math.floor(rmm / 15);
+      const periodPT = (periodES - 4 + 96) % 96;
+      const prices = omieData[r.date];
+      const omie = prices ? prices[periodPT] / 1000 : 0;
+      const td = getTariffForDate(r.date);
+      const precoEnergia = ((omie + TARIFF.CGS + TARIFF.k) * (1 + TARIFF.FP)) + TARIFF.GO;
+      const variaveis = precoEnergia + td.TAR + TARIFF.IEC + td.CR + td.CS + td.TSE;
+      const custoI = kwhI * variaveis * (1 + TARIFF.IVA23);
+      const hh = rhh;
+      let key;
+      if (hh < 3) key = 'Madrugada\n00h-03h';
+      else if (hh < 10) key = 'Base Load\n03h-10h';
+      else if (hh < 17) key = 'Solar\n10h-17h';
+      else if (hh < 19) key = 'Rampa\n17h-19h';
+      else key = 'Pico Noturno\n19h-00h';
+      ytdPeriodos[key] += kwhI;
+      ytdPeriodosCost[key] += custoI;
+      ytdKwh += kwhI;
+      ytdVariavelCost += custoI;
+      ytdOmieTotal += kwhI * omie * (1 + TARIFF.FP);
+    });
+  });
+
+  const ytdPotencia = ytdNumDays * TARIFF.potencia_dia * (1 + TARIFF.IVA23);
+  const ytdDGEG = months.length * TARIFF.DGEG_mes * (1 + TARIFF.IVA23);
+  const ytdCAV = ytdNumDays * TARIFF.CAV_dia * (1 + TARIFF.IVA6);
+  const ytdFixos = ytdPotencia + ytdDGEG + ytdCAV;
+  const ytdTotal = ytdVariavelCost + ytdFixos;
+  const ytdAvg = ytdKwh > 0 ? ytdTotal / ytdKwh : 0;
+
+  const firstCycleStart = months[0]; // "YYYY-MM-20"
+  const firstCycleData = allMonthsData[firstCycleStart];
+  const firstDate = firstCycleData.dates[0];
+  const lastMonthData = allMonthsData[months[months.length-1]];
+  const lastDate = lastMonthData.dates[lastMonthData.dates.length - 1];
+  document.getElementById('ytdTitle').textContent = `Year-to-Date — ${fmt(firstDate)} a ${fmt(lastDate)}`;
+
+  const ytdNumCycles = months.length;
+  const ytdAvgKwhCycle = ytdKwh / ytdNumCycles;
+  const ytdAvgCostCycle = ytdTotal / ytdNumCycles;
+
+  const ytdAvgKwhDay = ytdKwh / ytdNumDays;
+  const ytdAvgCostDay = ytdTotal / ytdNumDays;
+
+  const BASE_LOAD_KWH_DIA_YTD = 8;
+  const ytdBaseLoadKwh = BASE_LOAD_KWH_DIA_YTD * ytdNumDays;
+  const ytdAvgPrice = ytdKwh > 0 ? ytdTotal / ytdKwh : 0;
+  const ytdBaseLoadCost = ytdBaseLoadKwh * ytdAvgPrice;
+  const ytdFixosTotal = ytdFixos + ytdBaseLoadCost;
+  const ytdFixosPct = ytdTotal > 0 ? (ytdFixosTotal / ytdTotal * 100).toFixed(1) : 0;
+  const ytdContratuaisPct = ytdTotal > 0 ? (ytdFixos / ytdTotal * 100).toFixed(1) : 0;
+  const ytdBaseLoadPct = ytdTotal > 0 ? (ytdBaseLoadCost / ytdTotal * 100).toFixed(1) : 0;
+
+  document.getElementById('ytdKpis').innerHTML = `
+    <div class="kpi">
+      <div class="kpi-label">Consumo Total YTD</div>
+      <div class="kpi-value white">${ytdKwh.toFixed(0)}</div>
+      <div class="kpi-unit">kWh acumulados</div>
+      <div class="kpi-daily" style="margin-top:8px">Média por ciclo: ${ytdAvgKwhCycle.toFixed(0)} kWh</div>
+      <div class="kpi-unit" style="margin-top:4px;color:var(--muted)">Média diária: ${ytdAvgKwhDay.toFixed(1)} kWh/dia</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Custo Total YTD</div>
+      <div class="kpi-value">${ytdTotal.toFixed(2)} €</div>
+      <div class="kpi-unit">tudo incluído c/ IVA</div>
+      <div class="kpi-daily" style="margin-top:8px">Média por ciclo: ${ytdAvgCostCycle.toFixed(2)} €</div>
+      <div class="kpi-unit" style="margin-top:4px;color:var(--muted)">Média diária: ${ytdAvgCostDay.toFixed(2)} €/dia</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Custo Médio YTD por kWh</div>
+      <div class="kpi-value blue">${ytdAvg.toFixed(4)} €</div>
+      <div class="kpi-unit">€/kWh ponderado real</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Preço Médio OMIE YTD</div>
+      <div class="kpi-value blue">${ytdKwh > 0 ? (ytdOmieTotal * (1 + TARIFF.IVA23) / ytdKwh).toFixed(4) : '—'} €</div>
+      <div class="kpi-unit">€/kWh c/ IVA · custo energia pura</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Custos Fixos YTD</div>
+      <div class="kpi-value" style="font-size:clamp(28px,4vw,44px)">${ytdFixosTotal.toFixed(2)} €</div>
+      <div class="kpi-unit" style="margin-bottom:10px">${ytdFixosPct}% do total c/ IVA</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px">Potência + DGEG + CAV c/ IVA</div>
+      <div style="font-size:14px;color:var(--text);font-weight:600">${ytdFixos.toFixed(2)} € <span style="color:var(--muted);font-weight:400;font-size:11px">(${ytdContratuaisPct}%)</span></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px">Base load (${ytdBaseLoadKwh.toFixed(0)} kWh · ${BASE_LOAD_KWH_DIA_YTD} kWh/dia)</div>
+      <div style="font-size:14px;color:var(--text);font-weight:600">${ytdBaseLoadCost.toFixed(2)} € <span style="color:var(--muted);font-weight:400;font-size:11px">(${ytdBaseLoadPct}%)</span></div>
+    </div>
+  `;
+
+  // SVG chart YTD
+  const el = document.getElementById('ytdChart');
+  const W = el.getBoundingClientRect().width || window.innerWidth - 64 || 320;
+  const H = 300;
+  const padL = 55, padR = 20, padT = 20, padB = 84;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+  const colors = ['#60c8f0','#8860f0','#c8f060','#f0c860','#c860f0'];
+  const values = ytdPeriodoKeys.map(k => ytdPeriodosCost[k]);
+  const maxVal = Math.max(...values) * 1.15;
+  const n = ytdPeriodoKeys.length;
+  const barW = chartW / n * 0.6;
+  const gap = chartW / n;
+  const ytdTotalKwhPeriodos = ytdPeriodoKeys.reduce((s, k) => s + ytdPeriodos[k], 0);
+
+  let yLines = '', yLabels = '';
+  for (let i = 0; i <= 5; i++) {
+    const v = maxVal / 5 * i;
+    const y = padT + chartH - (v / maxVal * chartH);
+    yLines += `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#2a2c30" stroke-width="1"/>`;
+    yLabels += `<text x="${padL-6}" y="${y+4}" text-anchor="end" fill="#6b6f77" font-size="10" font-family="Inter,sans-serif">${v.toFixed(1)}€</text>`;
+  }
+
+  let bars = '', xlabels = '';
+  values.forEach((v, i) => {
+    const x = padL + gap * i + (gap - barW) / 2;
+    const bh = (v / maxVal) * chartH;
+    const y = padT + chartH - bh;
+    const pct = ytdTotal > 0 ? (v / ytdTotal * 100).toFixed(1) : 0;
+    const key = ytdPeriodoKeys[i];
+    const kwh = ytdPeriodos[key];
+    const pctKwh = ytdTotalKwhPeriodos > 0 ? (kwh / ytdTotalKwhPeriodos * 100).toFixed(1) : 0;
+    const avg = kwh > 0 ? v / kwh : 0;
+    bars += `<rect x="${x}" y="${y}" width="${barW}" height="${bh}" fill="${colors[i]}" opacity="0.85" rx="4"/>`;
+    bars += `<text x="${x+barW/2}" y="${y-6}" text-anchor="middle" fill="#e8e9eb" font-size="13" font-weight="bold" font-family="Inter,sans-serif">${v.toFixed(2)} €</text>`;
+    const timeLabel = key.split('\n')[1]; // only the time range e.g. "06h-10h"
+    const lx = x + barW/2;
+    const ly = padT + chartH + 18;
+    xlabels += `<text x="${lx}" y="${ly}" text-anchor="middle" fill="#6b6f77" font-size="13" font-family="Inter,sans-serif">${timeLabel}</text>`;
+    xlabels += `<text x="${lx}" y="${ly+18}" text-anchor="middle" fill="#e8e9eb" font-size="13" font-weight="bold" font-family="Inter,sans-serif">${pct}% custo · ${pctKwh}% kWh</text>`;
+    xlabels += `<text x="${lx}" y="${ly+34}" text-anchor="middle" fill="#6b6f77" font-size="12" font-family="Inter,sans-serif">Média: ${avg.toFixed(4)} €/kWh</text>`;
+  });
+
+  el.innerHTML = `<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+    ${yLines}${yLabels}${bars}${xlabels}
+  </svg>`;
+
+  // YTD summary boxes
+  const ytdSummaryHtml = ytdPeriodoKeys.map(k => {
+    const kwh = ytdPeriodos[k];
+    const cost = ytdPeriodosCost[k];
+    const avg = kwh > 0 ? cost / kwh : 0;
+    const pct = ytdTotal > 0 ? (cost / ytdTotal * 100).toFixed(1) : 0;
+    const pctKwh = ytdTotalKwhPeriodos > 0 ? (kwh / ytdTotalKwhPeriodos * 100).toFixed(1) : 0;
+    const label = k.replace('\n', ' ');
+    return `<div class="breakdown-item">
+      <div class="breakdown-label">${label}</div>
+      <div class="breakdown-iva">${kwh.toFixed(1)} kWh · ${pctKwh}% dos kWh · ${pct}% do custo</div>
+      <div class="breakdown-value">${cost.toFixed(2)} €</div>
+      <div class="breakdown-iva" style="margin-top:2px">Média: ${avg.toFixed(4)} €/kWh</div>
+    </div>`;
+  }).join('');
+  document.getElementById('ytdSummary').innerHTML = ytdSummaryHtml;
+
+  renderMonthlyChart();
+}
+
+function renderMonthlyChart() {
+  const months = Object.keys(allMonthsData).sort();
+  if (months.length < 2) {
+    document.getElementById('monthlySection').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('monthlySection').style.display = 'block';
+  void document.getElementById('monthlySection').offsetHeight; // force reflow
+
+  const monthNames = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const labels = [];
+  const kwhData = [];
+  const avgData = [];
+  const minData = [];
+
+  months.forEach(ym => {
+    const m = allMonthsData[ym];
+    // Label: start date of cycle e.g. "20 Dez" from key "2025-12-20"
+    const cycleStart = m.dates[0]; // first actual date in cycle
+    const cycleEnd = m.dates[m.dates.length - 1];
+    const [sy, sm] = cycleStart.split('-');
+    labels.push(monthNames[parseInt(sm)-1] + '/' + monthNames[parseInt(cycleEnd.split('-')[1])-1]);
+
+    let totalKwh = 0;
+    let totalCost = 0;
+    let minCostTotal = 0;
+    m.intervals.forEach(r => {
+      const kwhI = r.kwh * 0.25;
+      const [hh, mm] = r.hora.split(':').map(Number);
+      const periodES = (hh * 4) + Math.floor(mm / 15);
+      const periodPT = (periodES - 4 + 96) % 96;
+      const prices = omieData[r.date];
+      const omie = prices ? prices[periodPT] / 1000 : 0;
+      const td = getTariffForDate(r.date);
+      const precoEnergia = ((omie + TARIFF.CGS + TARIFF.k) * (1 + TARIFF.FP)) + TARIFF.GO;
+      const variaveis = precoEnergia + td.TAR + TARIFF.IEC + td.CR + td.CS + td.TSE;
+      const custoI = kwhI * variaveis * (1 + TARIFF.IVA23);
+      // Custo mínimo: mesmo cálculo mas sem OMIE
+      const precoMin = ((TARIFF.CGS + TARIFF.k) * (1 + TARIFF.FP)) + TARIFF.GO;
+      const variaveisMin = precoMin + td.TAR + TARIFF.IEC + td.CR + td.CS + td.TSE;
+      const custoMinI = kwhI * variaveisMin * (1 + TARIFF.IVA23);
+      totalKwh += kwhI;
+      totalCost += custoI;
+      minCostTotal += custoMinI;
+    });
+
+    const numDays = m.dates.length;
+    const potencia = numDays * TARIFF.potencia_dia * (1 + TARIFF.IVA23);
+    const dgeg = TARIFF.DGEG_mes * (1 + TARIFF.IVA23);
+    const cav = numDays * TARIFF.CAV_dia * (1 + TARIFF.IVA6);
+    const totalComFixos = totalCost + potencia + dgeg + cav;
+    const avg = totalKwh > 0 ? totalComFixos / totalKwh : 0;
+    const minAvgKwh = totalKwh > 0 ? minCostTotal / totalKwh : 0;
+
+    kwhData.push(Math.round(totalKwh));
+    avgData.push(parseFloat(avg.toFixed(4)));
+    minData.push(parseFloat(minAvgKwh.toFixed(4)));
+  });
+
+  const el = document.getElementById('monthlyChart');
+  const W = el.getBoundingClientRect().width || window.innerWidth - 80 || 320;
+  const H = 420;
+  const padL = 62, padR = 72, padT = 40, padB = 52;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+
+  const maxKwh = Math.max(...kwhData) * 1.22;
+  const minAvg = Math.min(...avgData, ...minData) * 0.92;
+  const maxAvg = Math.max(...avgData, ...minData) * 1.08;
+  const n = labels.length;
+  const barW = Math.min(chartW / n * 0.52, 50);
+  const gap = chartW / n;
+
+  let yLines = '', yLabelsL = '', yLabelsR = '';
+  for (let i = 0; i <= 4; i++) {
+    const v = maxKwh / 4 * i;
+    const y = padT + chartH - (v / maxKwh * chartH);
+    yLines += `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="#2a2c30" stroke-width="1"/>`;
+    yLabelsL += `<text x="${padL - 8}" y="${y + 4}" text-anchor="end" fill="#6b6f77" font-size="10" font-family="Inter,sans-serif">${Math.round(v)}</text>`;
+  }
+  for (let i = 0; i <= 4; i++) {
+    const v = minAvg + (maxAvg - minAvg) / 4 * i;
+    const y = padT + chartH - ((v - minAvg) / (maxAvg - minAvg) * chartH);
+    yLabelsR += `<text x="${W - padR + 8}" y="${y + 4}" text-anchor="start" fill="#f0c060" font-size="10" font-family="Inter,sans-serif">${v.toFixed(3)}</text>`;
+  }
+
+  let bars = '', xlabels = '';
+  let linePoints = '', lineDots = '', lineLabels = '';
+  let minLinePoints = '', minLineDots = '', minLineLabels = '';
+  const pts = [], ptsMin = [];
+
+  kwhData.forEach((kwh, i) => {
+    const x = padL + gap * i + (gap - barW) / 2;
+    const bh = (kwh / maxKwh) * chartH;
+    const y = padT + chartH - bh;
+    bars += `<rect x="${x}" y="${y}" width="${barW}" height="${bh}" fill="#e24b4a" rx="3"/>`;
+    bars += `<text x="${x + barW/2}" y="${y - 6}" text-anchor="middle" fill="#e8e9eb" font-size="11" font-weight="bold" font-family="Inter,sans-serif">${kwh}</text>`;
+
+    // Kristin annotation: mark Feb cycle (label contains "Fev") with a badge
+    const isFebCycle = labels[i] && labels[i].includes('Fev');
+    if (isFebCycle) {
+      const bx = x + barW / 2;
+      const by = padT - 20;
+      bars += `<rect x="${bx - 28}" y="${by - 11}" width="56" height="16" rx="4" fill="#f0a050" opacity="0.18"/>`;
+      bars += `<text x="${bx}" y="${by}" text-anchor="middle" fill="#f0a050" font-size="9" font-weight="bold" font-family="Inter,sans-serif">⚡ Kristin</text>`;
+    }
+    xlabels += `<text x="${padL + gap * i + gap/2}" y="${padT + chartH + 22}" text-anchor="middle" fill="#6b6f77" font-size="11" font-family="Inter,sans-serif">${labels[i]}</text>`;
+
+    const cx = padL + gap * i + gap / 2;
+    const avg = avgData[i];
+    const cy = padT + chartH - ((avg - minAvg) / (maxAvg - minAvg) * chartH);
+    pts.push([cx, cy, avg]);
+
+    const mn = minData[i];
+    const mny = padT + chartH - ((mn - minAvg) / (maxAvg - minAvg) * chartH);
+    ptsMin.push([cx, mny, mn]);
+  });
+
+  // Custo médio — âmbar
+  linePoints = pts.map(p => `${p[0]},${p[1]}`).join(' ');
+  pts.forEach(([cx, cy, avg], i) => {
+    lineDots += `<circle cx="${cx}" cy="${cy}" r="4" fill="#f0c060" stroke="#161719" stroke-width="1.5"/>`;
+    // Alternate label above/below to avoid overlap
+    const labelY = i % 2 === 0 ? cy - 10 : cy + 20;
+    lineLabels += `<text x="${cx}" y="${labelY}" text-anchor="middle" fill="#f0c060" font-size="10" font-weight="bold" font-family="Inter,sans-serif">${avg.toFixed(4)}</text>`;
+  });
+
+  // Custo mínimo — laranja claro tracejado
+  minLinePoints = ptsMin.map(p => `${p[0]},${p[1]}`).join(' ');
+  ptsMin.forEach(([cx, cy, mn], i) => {
+    minLineDots += `<circle cx="${cx}" cy="${cy}" r="3" fill="#f0a050" stroke="#161719" stroke-width="1.5"/>`;
+    const labelY = i % 2 === 0 ? cy + 20 : cy - 10;
+    minLineLabels += `<text x="${cx}" y="${labelY}" text-anchor="middle" fill="#f0a050" font-size="10" font-weight="bold" font-family="Inter,sans-serif">${mn.toFixed(4)}</text>`;
+  });
+
+  const axisL = `<text x="${padL - 48}" y="${padT + chartH/2}" text-anchor="middle" fill="#6b6f77" font-size="10" font-family="Inter,sans-serif" transform="rotate(-90,${padL-48},${padT+chartH/2})">kWh por ciclo</text>`;
+  const axisR = `<text x="${W - padR + 58}" y="${padT + chartH/2}" text-anchor="middle" fill="#f0c060" font-size="10" font-family="Inter,sans-serif" transform="rotate(90,${W-padR+58},${padT+chartH/2})">€/kWh</text>`;
+
+  el.innerHTML = `<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+    ${yLines}${yLabelsL}${yLabelsR}${axisL}${axisR}
+    ${bars}
+    <polyline points="${linePoints}" fill="none" stroke="#f0c060" stroke-width="2"/>
+    ${lineDots}${lineLabels}
+    <polyline points="${minLinePoints}" fill="none" stroke="#f0a050" stroke-width="2" stroke-dasharray="5,3"/>
+    ${minLineDots}${minLineLabels}
+    ${xlabels}
+  </svg>`;
+
+  // Legend rendered as HTML below the SVG — no overlap possible
+  const legendEl = el.nextElementSibling && el.nextElementSibling.classList.contains('monthly-legend')
+    ? el.nextElementSibling
+    : (() => { const d = document.createElement('div'); d.className = 'monthly-legend'; el.after(d); return d; })();
+  legendEl.style.cssText = 'display:flex;flex-wrap:wrap;gap:20px;margin-top:14px;padding-top:12px;border-top:1px solid #2a2c30;';
+  legendEl.innerHTML = `
+    <span style="display:flex;align-items:center;gap:7px;font-size:12px;color:#6b6f77;">
+      <span style="width:12px;height:12px;border-radius:2px;background:#e24b4a;display:inline-block;flex-shrink:0;"></span>Consumo kWh por ciclo
+    </span>
+    <span style="display:flex;align-items:center;gap:7px;font-size:12px;color:#f0c060;">
+      <span style="display:inline-block;width:18px;height:2px;background:#f0c060;flex-shrink:0;border-radius:1px;"></span>Custo médio real €/kWh (c/ OMIE)
+    </span>
+    <span style="display:flex;align-items:center;gap:7px;font-size:12px;color:#f0a050;">
+      <span style="display:inline-block;width:18px;height:0;border-top:2px dashed #f0a050;flex-shrink:0;"></span>Custo mínimo €/kWh (OMIE = 0)
+    </span>
+  `;
+}
+
+// Load saved data on page open
+function populateCycleSelector() {
+  const cycles = Object.keys(allMonthsData).sort();
+  if (cycles.length === 0) return;
+  const sel = document.getElementById('cycleSelector');
+  const monthNames = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  sel.innerHTML = cycles.map(key => {
+    const m = allMonthsData[key];
+    const first = m.dates[0];
+    const last = m.dates[m.dates.length - 1];
+    const [fy,fm,fd] = first.split('-');
+    const [ly,lm,ld] = last.split('-');
+    const label = `${fd}/${fm}/${fy} → ${ld}/${lm}/${ly}`;
+    return `<option value="${key}">${label}</option>`;
+  }).join('');
+  // Default to most recent
+  sel.value = cycles[cycles.length - 1];
+  document.getElementById('auditSection').style.display = 'block';
+  renderAudit();
+}
+
+function renderAudit() {
+  const key = document.getElementById('cycleSelector').value;
+  const m = allMonthsData[key];
+  if (!m) return;
+
+  const { dates, intervals } = m;
+  const numDays = dates.length;
+  const first = dates[0];
+  const last = dates[dates.length - 1];
+
+  let totalKwh = 0;
+  let omieTotal = 0, margemCoop = 0, cgsTotal = 0, tseTotal = 0;
+  let goTotal = 0, tarTotal = 0, iecTotal = 0, crTotal = 0, csTotal = 0;
+
+  intervals.forEach(r => {
+    const kwhI = r.kwh * 0.25;
+    const [hh, mm] = r.hora.split(':').map(Number);
+    const periodES = (hh * 4) + Math.floor(mm / 15);
+    const periodPT = (periodES - 4 + 96) % 96;
+    const prices = omieData[r.date];
+    const omie = prices ? prices[periodPT] / 1000 : 0;
+    const td = getTariffForDate(r.date);
+
+    omieTotal  += kwhI * omie * (1 + TARIFF.FP);
+    margemCoop += kwhI * TARIFF.k * (1 + TARIFF.FP);
+    cgsTotal   += kwhI * TARIFF.CGS * (1 + TARIFF.FP);
+    tseTotal   += kwhI * td.TSE;
+    goTotal    += kwhI * TARIFF.GO;
+    tarTotal   += kwhI * td.TAR;
+    iecTotal   += kwhI * TARIFF.IEC;
+    crTotal    += kwhI * td.CR;
+    csTotal    += kwhI * td.CS;
+    totalKwh   += kwhI;
+  });
+
+  const potenciaSemIVA = numDays * TARIFF.potencia_dia;
+  const dgegSemIVA = TARIFF.DGEG_mes;
+  const cavSemIVA = TARIFF.CAV_dia * numDays;
+
+  const varSemIVA = omieTotal + margemCoop + cgsTotal + tseTotal + goTotal + tarTotal + iecTotal + crTotal + csTotal;
+  const totalSemIVA = varSemIVA + potenciaSemIVA + dgegSemIVA;
+  const iva23 = totalSemIVA * TARIFF.IVA23;
+  const iva6 = cavSemIVA * TARIFF.IVA6;
+  const totalComIVA = totalSemIVA + iva23 + cavSemIVA + iva6;
+  const custoMedio = totalKwh > 0 ? totalComIVA / totalKwh : 0;
+
+  // Categorias: Variáveis, Fixos
+  // Variáveis: componentes energia + IVA 23% sobre elas
+  const varComIVA = varSemIVA * (1 + TARIFF.IVA23);
+  // Fixos: Potência + DGEG + CAV + IVA respectivo
+  const fixosComIVA = potenciaSemIVA * (1 + TARIFF.IVA23) + dgegSemIVA * (1 + TARIFF.IVA23) + cavSemIVA * (1 + TARIFF.IVA6);
+  // Custo evitável por kWh (o que realmente poupo por cada kWh que não consumo)
+  const custoEvitavel = totalKwh > 0 ? varComIVA / totalKwh : 0;
+  const pctVar = totalComIVA > 0 ? (varComIVA / totalComIVA * 100) : 0;
+  const pctFix = totalComIVA > 0 ? (fixosComIVA / totalComIVA * 100) : 0;
+
+  const fmt2 = v => v.toFixed(2) + ' €';
+  const fmt4 = v => v.toFixed(4) + ' €';
+
+  const rows = [
+    ['Energia OMIE', omieTotal, '23%'],
+    ['Margem Coopérnico', margemCoop, '23%'],
+    ['Gest. Sistema (CGS)', cgsTotal, '23%'],
+    ['Tarifa Social (TSE)', tseTotal, '23%'],
+    ['Garantias Origem (GO)', goTotal, '23%'],
+    ['Acesso Redes (TAR)', tarTotal, '23%'],
+    ['Imp. Esp. Consumo (IEC)', iecTotal, '23%'],
+    ['Custos Regulação (CR)', crTotal, '23%'],
+    ['Custos Sistema (CS)', csTotal, '23%'],
+    ['Potência Contratada', potenciaSemIVA, '23%'],
+    ['Taxa DGEG', dgegSemIVA, '23%'],
+    ['Contrib. Audiovisual (CAV)', cavSemIVA, '6%'],
+  ];
+
+  const rowsHtml = rows.map(([label, val, iva]) => {
+    const ivaRate = iva === '23%' ? TARIFF.IVA23 : TARIFF.IVA6;
+    const comIVA = val * (1 + ivaRate);
+    return `<tr>
+      <td style="padding:8px 12px;color:var(--text);border-bottom:1px solid var(--border)">${label}</td>
+      <td style="padding:8px 12px;color:var(--muted);border-bottom:1px solid var(--border);text-align:right">IVA ${iva}</td>
+      <td style="padding:8px 12px;color:var(--text);border-bottom:1px solid var(--border);text-align:right;font-weight:600">${fmt2(comIVA)}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('auditContent').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+      <div style="background:var(--surface2);border-radius:10px;padding:14px 16px">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Período</div>
+        <div style="font-size:15px;font-weight:600;color:var(--text)">${fmt(first)} → ${fmt(last)}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">${numDays} dias</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:10px;padding:14px 16px">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Consumo total</div>
+        <div style="font-size:15px;font-weight:600;color:var(--text)">${totalKwh.toFixed(0)} kWh</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">Média: ${(totalKwh/numDays).toFixed(1)} kWh/dia</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:10px;padding:14px 16px">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Custo médio</div>
+        <div style="font-size:15px;font-weight:600;color:var(--accent2)">${fmt4(custoMedio)}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">€/kWh ponderado real</div>
+      </div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:16px">
+      <thead>
+        <tr style="border-bottom:1px solid var(--border)">
+          <th style="padding:8px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:500">Componente</th>
+          <th style="padding:8px 12px;text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:500">IVA</th>
+          <th style="padding:8px 12px;text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:500">Valor c/ IVA</th>
+        </tr>
+      </thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>
+    <div style="background:var(--surface2);border:1px solid var(--accent);border-radius:10px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+      <div style="font-size:13px;color:var(--muted)">Total calculado c/ IVA</div>
+      <div style="font-size:22px;font-weight:800;color:var(--accent)">${fmt2(totalComIVA)}</div>
+    </div>
+
+    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;font-weight:600">Decomposição por categoria</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:8px">
+      <div style="background:var(--surface2);border-radius:10px;padding:16px">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Custos variáveis</div>
+        <div style="font-size:22px;font-weight:800;color:#f06060">${fmt2(varComIVA)}</div>
+        <div style="font-size:13px;color:#f06060;font-weight:600;margin-top:4px">${pctVar.toFixed(1)}% do total</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.6">Energia OMIE + Margem + CGS + TSE + GO + TAR + IEC + CR + CS + IVA 23%</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:10px;padding:16px">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Custos fixos</div>
+        ${(() => {
+          const BASE_LOAD_KWH_DIA_AUD = 8;
+          const audBaseLoadKwh = BASE_LOAD_KWH_DIA_AUD * numDays;
+          const audBaseLoadCost = audBaseLoadKwh * custoMedio;
+          const audFixosTotal = fixosComIVA + audBaseLoadCost;
+          const audPctFix = totalComIVA > 0 ? (audFixosTotal / totalComIVA * 100).toFixed(1) : 0;
+          const audPctContr = totalComIVA > 0 ? (fixosComIVA / totalComIVA * 100).toFixed(1) : 0;
+          const audPctBase = totalComIVA > 0 ? (audBaseLoadCost / totalComIVA * 100).toFixed(1) : 0;
+          return `
+            <div style="font-size:22px;font-weight:800;color:var(--accent2)">${audFixosTotal.toFixed(2)} €</div>
+            <div style="font-size:13px;color:var(--accent2);font-weight:600;margin-top:4px">${audPctFix}% do total</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:10px">Potência + DGEG + CAV c/ IVA</div>
+            <div style="font-size:13px;color:var(--text);font-weight:600;margin-top:2px">${fixosComIVA.toFixed(2)} € <span style="color:var(--muted);font-weight:400;font-size:11px">(${audPctContr}%)</span></div>
+            <div style="font-size:11px;color:var(--muted);margin-top:6px">Base load (${audBaseLoadKwh.toFixed(0)} kWh · ${BASE_LOAD_KWH_DIA_AUD} kWh/dia)</div>
+            <div style="font-size:13px;color:var(--text);font-weight:600;margin-top:2px">${audBaseLoadCost.toFixed(2)} € <span style="color:var(--muted);font-weight:400;font-size:11px">(${audPctBase}%)</span></div>
+          `;
+        })()}
+      </div>
+      <div style="background:var(--surface2);border-radius:10px;padding:16px;border:1px solid var(--accent)">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Custo evitável por kWh</div>
+        <div style="font-size:22px;font-weight:800;color:var(--accent)">${custoEvitavel.toFixed(4)} €</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:8px;line-height:1.6">Por cada kWh que não consomes, poupas exactamente este valor na factura</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderTrendChart() {
+  const months = Object.keys(allMonthsData).sort();
+  if (months.length < 2) { document.getElementById('trendSection').style.display = 'none'; return; }
+  document.getElementById('trendSection').style.display = 'block';
+  void document.getElementById('trendSection').offsetHeight;
+
+  const monthNames = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const labels = [], kwhData = [], hasKristin = [];
+
+  months.forEach(ym => {
+    const m = allMonthsData[ym];
+    const sm = parseInt(m.dates[0].split('-')[1]);
+    const em = parseInt(m.dates[m.dates.length-1].split('-')[1]);
+    labels.push(monthNames[sm-1] + '/' + monthNames[em-1]);
+    let totalKwh = 0;
+    m.intervals.forEach(r => { totalKwh += r.kwh * 0.25; });
+    kwhData.push(Math.round(totalKwh));
+    // Kristin: ciclo que contém fevereiro (mês 2) nas suas datas
+    const hasFev = m.dates.some(d => d.split('-')[1] === '02');
+    hasKristin.push(hasFev);
+  });
+
+  const baseKwh = kwhData[0];
+  const pctData = kwhData.map(v => parseFloat(((v - baseKwh) / baseKwh * 100).toFixed(1)));
+
+  const el = document.getElementById('trendChart');
+  const W = el.getBoundingClientRect().width || window.innerWidth - 80 || 320;
+  // Extra top padding for Kristin badge, extra bottom for x labels
+  const H = 380;
+  const padL = 68, padR = 72, padT = 60, padB = 52;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+  const n = labels.length;
+  const barW = Math.min(chartW / n * 0.52, 56);
+  const gap = chartW / n;
+
+  const maxKwh = Math.max(...kwhData) * 1.18;
+  const minPct = Math.min(...pctData);
+  const maxPct = Math.max(...pctData);
+  const pctSpan = (maxPct - minPct) || 1;
+  const pctMin = minPct - pctSpan * 0.28;
+  const pctMax = maxPct + pctSpan * 0.28;
+
+  // Grid + axis labels
+  let yLines = '', yLabelsL = '', yLabelsR = '';
+  for (let i = 0; i <= 4; i++) {
+    const v = maxKwh / 4 * i;
+    const y = padT + chartH - (v / maxKwh * chartH);
+    yLines += `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#2a2c30" stroke-width="1"/>`;
+    yLabelsL += `<text x="${padL-8}" y="${y+4}" text-anchor="end" fill="#6b6f77" font-size="10" font-family="Inter,sans-serif">${Math.round(v)} kWh</text>`;
+  }
+  for (let i = 0; i <= 4; i++) {
+    const v = pctMin + (pctMax - pctMin) / 4 * i;
+    const y = padT + chartH - ((v - pctMin) / (pctMax - pctMin) * chartH);
+    const sign = v >= 0 ? '+' : '';
+    yLabelsR += `<text x="${W-padR+8}" y="${y+4}" text-anchor="start" fill="#FF0000" font-size="10" font-family="Inter,sans-serif">${sign}${v.toFixed(0)}%</text>`;
+  }
+
+  // Zero % reference line
+  const zeroY = padT + chartH - ((0 - pctMin) / (pctMax - pctMin) * chartH);
+  if (zeroY >= padT && zeroY <= padT + chartH) {
+    yLines += `<line x1="${padL}" y1="${zeroY}" x2="${W-padR}" y2="${zeroY}" stroke="#FF0000" stroke-width="0.8" stroke-dasharray="4,3" opacity="0.5"/>`;
+  }
+
+  // Bars, x labels, Kristin badges
+  let bars = '', xlabels = '', kristinBadges = '';
+  const linePointsArr = [];
+
+  kwhData.forEach((v, i) => {
+    const x = padL + gap * i + (gap - barW) / 2;
+    const bh = Math.max((v / maxKwh) * chartH, 2);
+    const y = padT + chartH - bh;
+    const cx = padL + gap * i + gap / 2;
+
+    const fill = i === 0 ? '#FFD700' : (pctData[i] > 0 ? '#FFA500' : '#FFE033');
+    bars += `<rect x="${x}" y="${y}" width="${barW}" height="${bh}" fill="${fill}" rx="3"/>`;
+    bars += `<text x="${cx}" y="${y-7}" text-anchor="middle" fill="#e8e9eb" font-size="11" font-weight="bold" font-family="Inter,sans-serif">${v}</text>`;
+    xlabels += `<text x="${cx}" y="${padT+chartH+22}" text-anchor="middle" fill="#6b6f77" font-size="11" font-family="Inter,sans-serif">${labels[i]}</text>`;
+
+    // Kristin badge — positioned above bar value label, with arrow pointing down
+    if (hasKristin[i]) {
+      const bx = cx;
+      const badgeY = padT - 36;
+      const arrowBot = y - 10;
+      // Arrow line from badge to top of bar
+      kristinBadges += `<line x1="${bx}" y1="${badgeY+20}" x2="${bx}" y2="${arrowBot}" stroke="#ff4444" stroke-width="1.5" stroke-dasharray="3,2" opacity="0.8"/>`;
+      kristinBadges += `<polygon points="${bx-4},${arrowBot} ${bx+4},${arrowBot} ${bx},${arrowBot+7}" fill="#ff4444" opacity="0.9"/>`;
+      // Badge pill
+      kristinBadges += `<rect x="${bx-36}" y="${badgeY-14}" width="72" height="20" rx="10" fill="#ff4444" opacity="0.92"/>`;
+      kristinBadges += `<text x="${bx}" y="${badgeY-1}" text-anchor="middle" fill="#ffffff" font-size="10" font-weight="bold" font-family="Inter,sans-serif">⚡ Tempestade Kristin</text>`;
+    }
+
+    const cy = padT + chartH - ((pctData[i] - pctMin) / (pctMax - pctMin) * chartH);
+    linePointsArr.push([cx, cy, pctData[i], i]);
+  });
+
+  // Trend line — red
+  const linePoints = linePointsArr.map(p => `${p[0]},${p[1]}`).join(' ');
+  let dots = '', dotLabels = '';
+  linePointsArr.forEach(([cx, cy, pct, i]) => {
+    const sign = pct >= 0 ? '+' : '';
+    dots += `<circle cx="${cx}" cy="${cy}" r="5" fill="#FF0000" stroke="#161719" stroke-width="2"/>`;
+    // Alternate above/below with guaranteed 14px clearance
+    const above = cy - 16;
+    const below = cy + 22;
+    const ly = i % 2 === 0 ? above : below;
+    dotLabels += `<text x="${cx}" y="${ly}" text-anchor="middle" fill="#FF0000" font-size="11" font-weight="bold" font-family="Inter,sans-serif">${sign}${pct}%</text>`;
+  });
+
+  const axisL = `<text x="${padL-54}" y="${padT+chartH/2}" text-anchor="middle" fill="#6b6f77" font-size="10" font-family="Inter,sans-serif" transform="rotate(-90,${padL-54},${padT+chartH/2})">kWh por ciclo</text>`;
+  const axisR = `<text x="${W-padR+60}" y="${padT+chartH/2}" text-anchor="middle" fill="#FF0000" font-size="10" font-family="Inter,sans-serif" transform="rotate(90,${W-padR+60},${padT+chartH/2})">variação %</text>`;
+
+  el.innerHTML = `<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+    ${yLines}${yLabelsL}${yLabelsR}${axisL}${axisR}
+    ${bars}
+    <polyline points="${linePoints}" fill="none" stroke="#FF0000" stroke-width="3"/>
+    ${dots}${dotLabels}
+    ${xlabels}
+    ${kristinBadges}
+  </svg>
+  <div style="display:flex;flex-wrap:wrap;gap:20px;margin-top:16px;padding-top:14px;border-top:1px solid #2a2c30;">
+    <span style="display:flex;align-items:center;gap:7px;font-size:12px;color:#6b6f77;">
+      <span style="width:12px;height:12px;border-radius:2px;background:#FFD700;display:inline-block;flex-shrink:0;"></span>1.º ciclo (base de referência)
+    </span>
+    <span style="display:flex;align-items:center;gap:7px;font-size:12px;color:#6b6f77;">
+      <span style="width:12px;height:12px;border-radius:2px;background:#FFE033;display:inline-block;flex-shrink:0;"></span>Consumo abaixo da base
+    </span>
+    <span style="display:flex;align-items:center;gap:7px;font-size:12px;color:#6b6f77;">
+      <span style="width:12px;height:12px;border-radius:2px;background:#FFA500;display:inline-block;flex-shrink:0;"></span>Consumo acima da base
+    </span>
+    <span style="display:flex;align-items:center;gap:7px;font-size:12px;color:#FF0000;">
+      <span style="display:inline-block;width:18px;height:2px;background:#FF0000;flex-shrink:0;border-radius:1px;"></span>Variação % face ao 1.º ciclo (eixo direito)
+    </span>
+    <span style="display:flex;align-items:center;gap:7px;font-size:12px;color:#ff6666;">
+      <span style="display:inline-block;width:12px;height:12px;border-radius:10px;background:#ff4444;flex-shrink:0;"></span>Ciclo afetado pela Tempestade Kristin
+    </span>
+  </div>`;
+}
+
+window.addEventListener("load", loadFromSupabase);
+</script>
+
+<script src="./Energia_files/pdf.min.js"></script>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+let faturaData = null; // parsed invoice data
+
+async function handleFaturaUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  document.getElementById('faturaUploadText').textContent = '⏳ A processar PDF...';
+
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+    let fullText = '';
+    for (let p = 1; p <= pdf.numPages; p++) {
+      const page = await pdf.getPage(p);
+      const content = await page.getTextContent();
+      // Sort by Y descending then X ascending to preserve reading order
+      const items = content.items.slice().sort((a, b) => {
+        const yDiff = Math.round(b.transform[5]) - Math.round(a.transform[5]);
+        if (Math.abs(yDiff) > 3) return yDiff;
+        return a.transform[4] - b.transform[4];
+      });
+      fullText += items.map(i => i.str).join(' ') + '\n';
+    }
+
+    // Log raw text so we can inspect and fix regex if needed
+    console.log('=== PDF RAW TEXT (sorted) ===\n' + fullText + '\n=== END ===');
+
+    faturaData = parseFaturaCoopernico(fullText);
+
+    if (!faturaData) {
+      document.getElementById('faturaUploadText').textContent = '⚠️ Não foi possível ler a fatura — verifica o formato';
+      return;
+    }
+
+    document.getElementById('faturaUploadText').textContent = `✅ Fatura ${faturaData.numero} · ${faturaData.periodoInicio} → ${faturaData.periodoFim}`;
+    document.getElementById('faturaLimpar').style.display = 'block';
+    renderFaturaComparativo();
+
+  } catch (e) {
+    console.error(e);
+    document.getElementById('faturaUploadText').textContent = '⚠️ Erro ao ler o PDF';
+  }
+}
+
+function limparFatura() {
+  faturaData = null;
+  document.getElementById('faturaUploadText').textContent = 'Carregar fatura PDF (Coopérnico)';
+  document.getElementById('faturaInput').value = '';
+  document.getElementById('faturaLimpar').style.display = 'none';
+  document.getElementById('faturaComparativo').style.display = 'none';
+  document.getElementById('faturaComparativo').innerHTML = '';
+}
+
+function parseFaturaCoopernico(text) {
+  try {
+    const t = text.replace(/\s+/g, ' ');
+
+    // Número da fatura
+    const numMatch = t.match(/Fatura[:\s]+([A-Z]{2}\s*[A-Z]{2}\d+\/[\d\s]+\d)/i);
+    const numero = numMatch ? numMatch[1].replace(/\s/g, '') : '?';
+
+    // Período de faturação
+    const periodoMatch = t.match(/Per[ií]odo de fatura[çc][aã]o[:\s]+([\d\/]+)\s+a\s+([\d\/]+)/i);
+    if (!periodoMatch) return null;
+    const periodoInicio = periodoMatch[1];
+    const periodoFim    = periodoMatch[2];
+
+    // Total a pagar
+    const totalMatch = t.match(/Total (?:do documento|a Pagar)[:\s]*([\d\s]+[,.][\d]+)\s*€/i)
+                    || t.match(/([\d\s]+[,.][\d]+)\s*€\s*Total a Pagar/i);
+    const totalPagar = totalMatch ? parseFloat(totalMatch[1].replace(/\s/g,'').replace(',','.')) : null;
+
+    // Energia / Potência / Encargos / IVA — 4 valores após os labels
+    const blocoMatch = t.match(/Energia\s+Pot[eê]ncia\s+Encargos e Taxas\s+IVA\s+([\d,]+)\s*€\s+([\d,]+)\s*€\s+([\d,]+)\s*€\s+([\d,]+)\s*€/i);
+    const blocoFallback = t.match(/Energia\b.{0,80}?([\d]+,\d{2})\s*€.{0,60}?([\d]+,\d{2})\s*€.{0,60}?([\d]+,\d{2})\s*€.{0,60}?([\d]+,\d{2})\s*€/i);
+    const bm = blocoMatch || blocoFallback;
+    const energiaTotal  = bm ? parseFloat(bm[1].replace(',','.')) : null;
+    const potenciaTotal = bm ? parseFloat(bm[2].replace(',','.')) : null;
+    const encargosTotal = bm ? parseFloat(bm[3].replace(',','.')) : null;
+    const ivaTotal      = bm ? parseFloat(bm[4].replace(',','.')) : null;
+
+    // Total sem IVA, IVA 6%, IVA 23%
+    const semIVAMatch = t.match(/Total sem IVA[:\s]*([\d,]+)\s*€/i);
+    const iva6Match   = t.match(/IVA\(6%\)[:\s]*([\d,]+)\s*€/i);
+    const iva23Match  = t.match(/IVA\(23%\)[:\s]*([\d,]+)\s*€/i);
+    const totalSemIVA = semIVAMatch ? parseFloat(semIVAMatch[1].replace(',','.')) : null;
+    const iva6        = iva6Match   ? parseFloat(iva6Match[1].replace(',','.'))   : null;
+    const iva23       = iva23Match  ? parseFloat(iva23Match[1].replace(',','.'))  : null;
+
+    // Totais de secção
+    const totalConsumMatch = t.match(/Total Consumo[:\s]*([\d,]+)\s*€/i);
+    const totalTaxasMatch  = t.match(/Total Taxas e Encargos[:\s]*([\d,]+)\s*€/i);
+    const totalConsumo = totalConsumMatch ? parseFloat(totalConsumMatch[1].replace(',','.')) : null;
+    const totalTaxas   = totalTaxasMatch  ? parseFloat(totalTaxasMatch[1].replace(',','.'))  : null;
+
+    // Energia Ativa: "Consumo em Simples" ou "Consumo medido em Simples"
+    const subPeriodos = [];
+    const spRegex = /Consumo(?: medido)? em Simples\s+([\d\/]+)\s+([\d\/]+)\s+([\d\s,.]+?)\s+([\d,]+)\s+([\d,]+)\s+23%/g;
+    let spMatch;
+    while ((spMatch = spRegex.exec(t)) !== null) {
+      const kwh       = parseFloat(spMatch[3].replace(/\s/g,'').replace(',','.'));
+      const precoUnit = parseFloat(spMatch[4].replace(',','.'));
+      const valorSIVA = parseFloat(spMatch[5].replace(',','.'));
+      if (!isNaN(kwh) && kwh > 1) {
+        subPeriodos.push({ inicio: spMatch[1], fim: spMatch[2], kwh, precoUnit, valorSemIVA: valorSIVA, valorComIVA: parseFloat((valorSIVA*1.23).toFixed(2)) });
+      }
+    }
+
+    // TAR: "Acesso às redes em Simples"
+    const tarPeriodos = [];
+    const tarRegex = /Acesso às redes em Simples\s+([\d\/]+)\s+([\d\/]+)\s+([\d\s,.]+?)\s+([\d,]+)\s+([\d,]+)\s+23%/g;
+    let tarMatch;
+    while ((tarMatch = tarRegex.exec(t)) !== null) {
+      const kwh       = parseFloat(tarMatch[3].replace(/\s/g,'').replace(',','.'));
+      const precoUnit = parseFloat(tarMatch[4].replace(',','.'));
+      const valorSIVA = parseFloat(tarMatch[5].replace(',','.'));
+      if (!isNaN(kwh) && kwh > 1) {
+        tarPeriodos.push({ inicio: tarMatch[1], fim: tarMatch[2], kwh, precoUnit, valorSemIVA: valorSIVA, valorComIVA: parseFloat((valorSIVA*1.23).toFixed(2)) });
+      }
+    }
+
+    // Potência Contratada (com datas)
+    const potPeriodos = [];
+    const potRegex = /10[,.]35 kVA - Pot[eê]ncia Contratada(?! - Redes)\s+([\d\/]+)\s+([\d\/]+)\s+([\d,]+)\s+([\d,]+)\s+([\d,]+)\s+23%/g;
+    let potMatch;
+    while ((potMatch = potRegex.exec(t)) !== null) {
+      const dias = parseFloat(potMatch[3].replace(',','.')), precoUnit = parseFloat(potMatch[4].replace(',','.')), valorSIVA = parseFloat(potMatch[5].replace(',','.'));
+      potPeriodos.push({ inicio: potMatch[1], fim: potMatch[2], dias, precoUnit, valorSemIVA: valorSIVA, valorComIVA: parseFloat((valorSIVA*1.23).toFixed(2)) });
+    }
+
+    // Potência Redes — tenta com datas, depois sem datas
+    const potRedesPeriodos = [];
+    const potRedesComDatasRegex = /Pot[eê]ncia Contratada - Redes\s+([\d\/]+)\s+([\d\/]+)\s+([\d,]+)\s+([\d,]+)\s+([\d,]+)\s+23%/g;
+    let prcdMatch;
+    while ((prcdMatch = potRedesComDatasRegex.exec(t)) !== null) {
+      const dias = parseFloat(prcdMatch[3].replace(',','.')), precoUnit = parseFloat(prcdMatch[4].replace(',','.')), valorSIVA = parseFloat(prcdMatch[5].replace(',','.'));
+      potRedesPeriodos.push({ dias, precoUnit, valorSemIVA: valorSIVA, valorComIVA: parseFloat((valorSIVA*1.23).toFixed(2)) });
+    }
+    if (potRedesPeriodos.length === 0) {
+      const potRedesSemDatasRegex = /Pot[eê]ncia Contratada - Redes\s+([\d,]+)\s+([\d,]+)\s+([\d,]+)\s+23%/g;
+      let prsdMatch;
+      while ((prsdMatch = potRedesSemDatasRegex.exec(t)) !== null) {
+        const dias = parseFloat(prsdMatch[1].replace(',','.')), precoUnit = parseFloat(prsdMatch[2].replace(',','.')), valorSIVA = parseFloat(prsdMatch[3].replace(',','.'));
+        potRedesPeriodos.push({ dias, precoUnit, valorSemIVA: valorSIVA, valorComIVA: parseFloat((valorSIVA*1.23).toFixed(2)) });
+      }
+    }
+
+    // TSE: "Financiamento Tarifa Social"
+    const tsePeriodos = [];
+    const tseRegex = /Financiamento Tarifa Social\s+([\d\/]+)\s+([\d\/]+)\s+([\d\s,.]+?)\s+([\d,]+)\s+([\d,]+)\s+23%/g;
+    let tseMatch;
+    while ((tseMatch = tseRegex.exec(t)) !== null) {
+      const kwh = parseFloat(tseMatch[3].replace(/\s/g,'').replace(',','.')), precoUnit = parseFloat(tseMatch[4].replace(',','.')), valorSIVA = parseFloat(tseMatch[5].replace(',','.'));
+      if (!isNaN(kwh) && kwh > 0.1) {
+        tsePeriodos.push({ inicio: tseMatch[1], fim: tseMatch[2], kwh, precoUnit, valorSemIVA: valorSIVA, valorComIVA: parseFloat((valorSIVA*1.23).toFixed(2)) });
+      }
+    }
+
+    // CAV (IVA 6%)
+    const cavMatch = t.match(/Contribui[çc][aã]o AudioVisual\s+[\d,.]+\s*€[^%]+?([\d,]+)\s+6%/i)
+                  || t.match(/Contribui[çc][aã]o AudioVisual.{0,120}?([\d,]+)\s+6%/i);
+    const cavSIVA = cavMatch ? parseFloat(cavMatch[1].replace(',','.')) : null;
+
+    // IEC
+    const iecMatch = t.match(/Imposto Especial de Consumo Eletricidade\s+[\d\s,.]+\s+([\d,]+)\s+23%/i);
+    const iecSIVA = iecMatch ? parseFloat(iecMatch[1].replace(',','.')) : null;
+
+    // CR: "Custos de Regulação" ou "Custos Regulação" ou "Custos de Regulação Simples"
+    let crSIVA = 0;
+    const crRegex = /Custos (?:de )?Regula[çc][aã]o(?: Simples)?\s+[\d\/]*\s*[\d\/]*\s*([\d\s,.]+?)\s+([\d,]+)\s+([\d,]+)\s+23%/g;
+    let crMatch;
+    while ((crMatch = crRegex.exec(t)) !== null) { const v = parseFloat(crMatch[3].replace(',','.')); if (!isNaN(v)) crSIVA += v; }
+
+    // CS: "Custos de Sistema" ou "Custos Sistema" ou "Custos de Sistema Simples"
+    let csSIVA = 0;
+    const csRegex = /Custos (?:de )?Sistema(?: Simples)?\s+[\d\/]*\s*[\d\/]*\s*([\d\s,.]+?)\s+([\d,]+)\s+([\d,]+)\s+23%/g;
+    let csMatch;
+    while ((csMatch = csRegex.exec(t)) !== null) { const v = parseFloat(csMatch[3].replace(',','.')); if (!isNaN(v)) csSIVA += v; }
+
+    // DGEG: "Taxa de Exploração DGEG" ou "Taxa DGEG"
+    const dgegMatch = t.match(/Taxa(?:\s+de\s+Explora[çc][aã]o)?\s+DGEG\s+[\d,.]+\s+([\d,]+)\s+23%/i);
+    const dgegSIVA = dgegMatch ? parseFloat(dgegMatch[1].replace(',','.')) : null;
+
+    const kwhTotal = subPeriodos.reduce((s,p) => s + p.kwh, 0);
+
+    return {
+      numero, periodoInicio, periodoFim, totalPagar,
+      energiaTotal, potenciaTotal, encargosTotal, ivaTotal,
+      totalSemIVA, iva6, iva23, totalConsumo, totalTaxas,
+      subPeriodos, tarPeriodos, potPeriodos, potRedesPeriodos, tsePeriodos,
+      cavSIVA, iecSIVA, crSIVA, csSIVA, dgegSIVA, kwhTotal
+    };
+  } catch(e) {
+    console.error('parseFatura error', e);
+    return null;
+  }
+}
+
+function renderFaturaComparativo() {
+  if (!faturaData) return;
+  const fd = faturaData;
+
+  const toISO = dmy => { const [d,m,y] = dmy.split('/'); return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`; };
+  const fmt2  = v => v != null ? v.toFixed(2) + ' €' : '—';
+  const clr   = v => v === 0 ? 'var(--muted)' : v > 0 ? '#f06060' : '#4ec94e';
+  const sign  = v => v >= 0 ? '+' : '';
+
+  const fatIni = toISO(fd.periodoInicio);
+  const fatFim = toISO(fd.periodoFim);
+  const months = Object.keys(allMonthsData).sort();
+
+  // Compute dashboard components over full invoice period
+  let dashKwh=0, dashOmie=0, dashMargem=0, dashCGS=0, dashTSE=0;
+  let dashGO=0, dashTAR=0, dashIEC=0, dashCR=0, dashCS=0;
+  let dashDays = new Set();
+
+  months.forEach(ym => {
+    allMonthsData[ym].intervals.forEach(r => {
+      if (r.date < fatIni || r.date > fatFim) return;
+      const kwhI = r.kwh * 0.25;
+      const [hh,mm] = r.hora.split(':').map(Number);
+      const periodPT = ((hh*4 + Math.floor(mm/15)) - 4 + 96) % 96;
+      const prices = omieData[r.date];
+      const omie = prices ? prices[periodPT] / 1000 : 0;
+      const td = getTariffForDate(r.date);
+      dashKwh    += kwhI;
+      dashOmie   += kwhI * omie          * (1 + TARIFF.FP);
+      dashMargem += kwhI * TARIFF.k      * (1 + TARIFF.FP);
+      dashCGS    += kwhI * TARIFF.CGS    * (1 + TARIFF.FP);
+      dashTSE    += kwhI * td.TSE;
+      dashGO     += kwhI * TARIFF.GO;
+      dashTAR    += kwhI * td.TAR;
+      dashIEC    += kwhI * TARIFF.IEC;
+      dashCR     += kwhI * td.CR;
+      dashCS     += kwhI * td.CS;
+      dashDays.add(r.date);
+    });
+  });
+
+  const numDays  = dashDays.size;
+  const dashPot  = numDays * TARIFF.potencia_dia * (1 + TARIFF.IVA23);
+  const dashDGEG = Math.ceil(numDays/30) * TARIFF.DGEG_mes * (1 + TARIFF.IVA23);
+  const dashCAV  = numDays * TARIFF.CAV_dia * (1 + TARIFF.IVA6);
+  const IVA23 = 1 + TARIFF.IVA23;
+
+  // Dashboard grouped to match invoice lines
+  // "Consumo em Simples" = OMIE + Margem + CGS + TSE + GO + CR + CS  (all × IVA23)
+  //   Note: TAR is separate in fatura, so exclude from this group
+  const dashConsumoSimples = (dashOmie + dashMargem + dashCGS + dashGO) * IVA23;
+  const dashTARcIVA  = dashTAR  * IVA23;
+  const dashTSEcIVA  = dashTSE  * IVA23;
+  const dashIECcIVA  = dashIEC  * IVA23;
+  const dashTotal    = (dashOmie+dashMargem+dashCGS+dashTSE+dashGO+dashTAR+dashIEC+dashCR+dashCS)*IVA23 + dashPot + dashDGEG + dashCAV;
+
+  // Fatura parsed values (detail lines, s/IVA)
+  const fatSimplesSIVA   = fd.subPeriodos.reduce((s,p) => s + p.valorSemIVA, 0);
+  const fatSimplesCIVA   = fatSimplesSIVA * IVA23;
+  const fatTARsIVA       = fd.tarPeriodos.reduce((s,p) => s + p.valorSemIVA, 0);
+  const fatTARcIVA       = fatTARsIVA * IVA23;
+  const fatPotSIVA       = fd.potPeriodos.reduce((s,p) => s + p.valorSemIVA, 0)
+                         + fd.potRedesPeriodos.reduce((s,p) => s + p.valorSemIVA, 0);
+  const fatTSEsIVA       = fd.tsePeriodos.reduce((s,p) => s + p.valorSemIVA, 0);
+  const fatTSEcIVA       = fatTSEsIVA * IVA23;
+  const fatCAVsIVA       = fd.cavSIVA || 0;
+  const fatCAVcIVA       = fatCAVsIVA * (1 + TARIFF.IVA6);
+  const fatIECsIVA       = fd.iecSIVA || 0;
+  const fatIECcIVA       = fatIECsIVA * IVA23;
+
+  // ── Dashboard: valores s/IVA calculados directamente dos valores base ──
+  // Energia (IVA 23%): OMIE+Margem+CGS+GO+TAR — TSE, CR, CS vão nos Encargos como na fatura
+  const dashEnergiaSIVA  = dashOmie + dashMargem + dashCGS + dashGO + dashTAR;
+  const dashEnergiaCIVA  = dashEnergiaSIVA * IVA23;
+
+  // Potência (IVA 23%): s/IVA a partir dos dias × tarifa
+  const dashPotSIVA      = numDays * TARIFF.potencia_dia;
+  const dashPotCIVA      = dashPotSIVA * IVA23;
+
+  // Encargos e Taxas: TSE+IEC+DGEG+CR+CS (IVA 23%) + CAV (IVA 6%)
+  const dashEncSIVA23    = dashTSE + dashIEC + Math.round(numDays/30) * TARIFF.DGEG_mes + dashCR + dashCS;
+  const dashEncSIVA6     = numDays * TARIFF.CAV_dia;
+  const dashEncSIVA      = dashEncSIVA23 + dashEncSIVA6;
+  const dashEncargosCIVA = dashEncSIVA23 * IVA23 + dashEncSIVA6 * (1 + TARIFF.IVA6);
+
+  // IVA discriminado — calculado a partir dos s/IVA base (internamente consistente)
+  const dashIVA23val = (dashEnergiaSIVA + dashPotSIVA + dashEncSIVA23) * TARIFF.IVA23;
+  const dashIVA6val  = dashEncSIVA6 * TARIFF.IVA6;
+  // Total recalculado = soma das linhas (deve bater com dashTotal)
+  const dashTotalCalc = dashEnergiaSIVA + dashPotSIVA + dashEncSIVA + dashIVA23val + dashIVA6val;
+
+  // ── Fatura: valores s/IVA directamente dos sub-períodos parsed ──
+  const fatEnergiaSIVA  = fd.subPeriodos.reduce((s,p) => s + p.valorSemIVA, 0)
+                        + fd.tarPeriodos.reduce((s,p) => s + p.valorSemIVA, 0);
+  const fatPotSIVA2     = fd.potPeriodos.reduce((s,p) => s + p.valorSemIVA, 0)
+                        + fd.potRedesPeriodos.reduce((s,p) => s + p.valorSemIVA, 0);
+  const fatEncSIVA      = fd.tsePeriodos.reduce((s,p) => s + p.valorSemIVA, 0)
+                        + (fd.cavSIVA || 0) + (fd.iecSIVA || 0)
+                        + (fd.crSIVA || 0) + (fd.csSIVA || 0) + (fd.dgegSIVA || 0);
+  const fatEnergiaCIVA  = fd.energiaTotal;
+  const fatPotCIVA      = fd.potenciaTotal;
+  const fatEncargosCIVA = fd.encargosTotal;
+
+  // Cor: vermelho só quando fatura > dashboard
+  const clrFat = (fatVal, dashVal) => (fatVal != null && dashVal != null && fatVal > dashVal + 0.005) ? '#f06060' : 'var(--text)';
+
+  // Painel Dashboard — estrutura idêntica à fatura, tudo coerente internamente
+  const dashGrupoRows = `
+    <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
+      <span style="color:var(--muted);font-size:13px">Energia <span style="font-size:11px">(s/ IVA)</span></span>
+      <span style="font-weight:600;color:${clrFat(fatEnergiaSIVA, dashEnergiaSIVA)}">${dashEnergiaSIVA.toFixed(2)} €</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
+      <span style="color:var(--muted);font-size:13px">Potência <span style="font-size:11px">(s/ IVA)</span></span>
+      <span style="font-weight:600;color:${clrFat(fatPotSIVA2, dashPotSIVA)}">${dashPotSIVA.toFixed(2)} €</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
+      <span style="color:var(--muted);font-size:13px">Encargos e Taxas <span style="font-size:11px">(s/ IVA)</span></span>
+      <span style="font-weight:600;color:${clrFat(fatEncSIVA, dashEncSIVA)}">${dashEncSIVA.toFixed(2)} €</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
+      <span style="color:var(--muted);font-size:13px">IVA 23% <span style="font-size:11px">(estimado)</span></span>
+      <span style="font-weight:600;color:${clrFat(fd.iva23, dashIVA23val)}">${dashIVA23val.toFixed(2)} €</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
+      <span style="color:var(--muted);font-size:13px">IVA 6% <span style="font-size:11px">(estimado)</span></span>
+      <span style="font-weight:600;color:${clrFat(fd.iva6, dashIVA6val)}">${dashIVA6val.toFixed(2)} €</span>
+    </div>`;
+
+  // Comparison rows — grouped fatura line vs grouped dashboard
+  // Color: red when fatura c/IVA > dash c/IVA
+  const compDefs = [
+    ['Consumo em Simples',          fatSimplesSIVA, fatSimplesCIVA, dashConsumoSimples, 'OMIE + Margem + CGS + TSE + GO + CR + CS'],
+    ['TAR — Acesso Redes Energia',  fatTARsIVA,     fatTARcIVA,     dashTARcIVA,        'TAR'],
+    ['Potência Contratada',         fatPotSIVA,     fatPotCIVA,     dashPot,            'Potência (comercializador + redes)'],
+    ['Financiamento Tarifa Social', fatTSEsIVA,     fatTSEcIVA,     dashTSE*IVA23,      'TSE (já incluída em Consumo Simples)'],
+    ['Contrib. Audiovisual (CAV)',  fatCAVsIVA,     fatCAVcIVA,     dashCAV,            'CAV'],
+    ['Imp. Esp. Consumo (IEC)',     fatIECsIVA,     fatIECcIVA,     dashIECcIVA,        'IEC'],
+  ];
+
+  const compRows = compDefs.map(([label, fSIVA, fCIVA, dCIVA, note]) => {
+    const diff   = (fCIVA != null && dCIVA != null) ? fCIVA - dCIVA : null;
+    // Red only when fatura > dashboard
+    const color  = (diff != null && diff > 0.005) ? '#f06060' : 'var(--text)';
+    return `<tr>
+      <td style="padding:8px 12px;border-bottom:1px solid var(--border)">
+        <div style="font-size:13px;color:var(--text);font-weight:500">${label}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${note}</div>
+      </td>
+      <td style="padding:8px 12px;text-align:right;font-size:13px;color:var(--muted);border-bottom:1px solid var(--border)">${fSIVA != null ? fSIVA.toFixed(2)+' €' : '—'}</td>
+      <td style="padding:8px 12px;text-align:right;font-size:13px;font-weight:600;border-bottom:1px solid var(--border)">${fCIVA != null ? fCIVA.toFixed(2)+' €' : '—'}</td>
+      <td style="padding:8px 12px;text-align:right;font-size:13px;font-weight:600;border-bottom:1px solid var(--border)">${dCIVA != null ? dCIVA.toFixed(2)+' €' : '—'}</td>
+      <td style="padding:8px 12px;text-align:right;font-size:13px;font-weight:700;color:${color};border-bottom:1px solid var(--border)">
+        ${diff != null ? (diff >= 0 ? '+' : '')+diff.toFixed(2)+' €' : '—'}
+      </td>
+    </tr>`;
+  }).join('');
+
+  // Sub-period kWh — red when fatura kWh > dashboard kWh
+  const spRows = fd.subPeriodos.map((sp, i) => {
+    const spIni = toISO(sp.inicio), spFim = toISO(sp.fim);
+    let spKwh = 0;
+    months.forEach(ym => allMonthsData[ym].intervals.forEach(r => {
+      if (r.date >= spIni && r.date <= spFim) spKwh += r.kwh * 0.25;
+    }));
+    const diff = sp.kwh - spKwh; // positive = fatura > dashboard
+    const color = diff > 0.005 ? '#f06060' : 'var(--text)';
+    const tar = fd.tarPeriodos[i];
+    return `<tr>
+      <td style="padding:7px 10px;color:var(--muted);font-size:12px;border-bottom:1px solid var(--border)">${sp.inicio} → ${sp.fim}</td>
+      <td style="padding:7px 10px;text-align:right;font-weight:600;font-size:13px;border-bottom:1px solid var(--border)">${sp.kwh.toFixed(2)}</td>
+      <td style="padding:7px 10px;text-align:right;font-weight:600;font-size:13px;border-bottom:1px solid var(--border)">${spKwh.toFixed(2)}</td>
+      <td style="padding:7px 10px;text-align:right;font-weight:700;font-size:13px;color:${color};border-bottom:1px solid var(--border)">${diff >= 0 ? '+' : ''}${diff.toFixed(2)}</td>
+      <td style="padding:7px 10px;text-align:right;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border)">${sp.precoUnit.toFixed(6)} €/kWh</td>
+      <td style="padding:7px 10px;text-align:right;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border)">${sp.valorSemIVA.toFixed(2)} €</td>
+      <td style="padding:7px 10px;text-align:right;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border)">${tar ? tar.precoUnit.toFixed(6)+' €/kWh' : '—'}</td>
+      <td style="padding:7px 10px;text-align:right;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border)">${tar ? tar.valorSemIVA.toFixed(2)+' €' : '—'}</td>
+    </tr>`;
+  }).join('');
+
+  const diffKwh   = fd.kwhTotal - dashKwh; // positive = fatura > dashboard
+  const diffTotal = (fd.totalPagar || 0) - dashTotal;
+  const clrKwh    = diffKwh   > 0.5 ? '#f06060' : 'var(--text)';
+  const clrTotal  = diffTotal > 0.5 ? '#f06060' : 'var(--text)';
+
+  document.getElementById('faturaComparativo').style.display = 'block';
+  document.getElementById('faturaComparativo').innerHTML = `
+  <div style="border:1px solid var(--accent);border-radius:12px;padding:20px;background:var(--surface2)">
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:16px;font-weight:600">
+      📄 Comparativo Fatura ${fd.numero} · ${fd.periodoInicio} → ${fd.periodoFim}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+      <div style="background:var(--surface);border-radius:10px;padding:14px 16px">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px">kWh Faturados</div>
+        <div style="font-size:22px;font-weight:700">${fd.kwhTotal.toFixed(0)}</div>
+      </div>
+      <div style="background:var(--surface);border-radius:10px;padding:14px 16px">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px">kWh Dashboard</div>
+        <div style="font-size:22px;font-weight:700">${dashKwh.toFixed(0)}</div>
+      </div>
+      <div style="background:var(--surface);border-radius:10px;padding:14px 16px${diffKwh > 0.5 ? ';border:1px solid #f06060' : ''}">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Diferença kWh</div>
+        <div style="font-size:22px;font-weight:700;color:${clrKwh}">${diffKwh >= 0 ? '+' : ''}${diffKwh.toFixed(0)} kWh</div>
+      </div>
+      <div style="background:var(--surface);border-radius:10px;padding:14px 16px${diffTotal > 0.5 ? ';border:1px solid #f06060' : ''}">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Diferença Total €</div>
+        <div style="font-size:22px;font-weight:700;color:${clrTotal}">${diffTotal >= 0 ? '+' : ''}${diffTotal.toFixed(2)} €</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+      <div style="background:var(--surface);border-radius:10px;padding:14px 16px">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;font-weight:600">Fatura Coopérnico</div>
+        ${[['Energia', fatEnergiaSIVA, dashEnergiaSIVA, 's/ IVA'],
+           ['Potência', fatPotSIVA2, dashPotSIVA, 's/ IVA'],
+           ['Encargos e Taxas', fatEncSIVA, dashEncSIVA, 's/ IVA'],
+           ['IVA 23%', fd.iva23, dashIVA23val, ''],
+           ['IVA 6%', fd.iva6, dashIVA6val, '']].map(([l,v,d,lbl]) => {
+          const c = (v != null && d != null && v > d + 0.005) ? '#f06060' : 'var(--text)';
+          return `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
+            <span style="color:var(--muted);font-size:13px">${l}${lbl ? ` <span style="font-size:11px">(${lbl})</span>` : ''}</span>
+            <span style="font-weight:600;color:${c}">${v != null ? v.toFixed(2)+' €' : '—'}</span>
+          </div>`;
+        }).join('')}
+        <div style="display:flex;justify-content:space-between;padding:8px 0;margin-top:4px">
+          <span style="font-weight:700">Total a Pagar</span>
+          <span style="font-weight:800;font-size:18px;color:${clrTotal}">${fd.totalPagar != null ? fd.totalPagar.toFixed(2)+' €' : '—'}</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+          s/ IVA: ${fd.totalSemIVA != null ? fd.totalSemIVA.toFixed(2)+' €' : '—'} · IVA 6%: ${fd.iva6 != null ? fd.iva6.toFixed(2)+' €' : '—'} · IVA 23%: ${fd.iva23 != null ? fd.iva23.toFixed(2)+' €' : '—'}
+        </div>
+      </div>
+      <div style="background:var(--surface);border-radius:10px;padding:14px 16px">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;font-weight:600">Dashboard (agrupado)</div>
+        ${dashGrupoRows}
+        <div style="display:flex;justify-content:space-between;padding:8px 0;margin-top:4px">
+          <span style="font-weight:700">Total estimado</span>
+          <span style="font-weight:800;font-size:18px;color:${clrFat(fd.totalPagar, dashTotalCalc)}">${dashTotalCalc.toFixed(2)} €</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+          OMIE: ${(dashOmie*IVA23).toFixed(2)} € · Margem: ${(dashMargem*IVA23).toFixed(2)} € · TAR: ${(dashTAR*IVA23).toFixed(2)} €
+        </div>
+      </div>
+    </div>
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px;font-weight:600">Comparativo fatura vs Dashboard — linha a linha</div>
+    <div style="overflow-x:auto;margin-bottom:20px">
+      <table style="width:100%;border-collapse:collapse;background:var(--surface);border-radius:10px;overflow:hidden;min-width:640px">
+        <thead><tr style="border-bottom:2px solid var(--border)">
+          <th style="padding:9px 12px;text-align:left;font-size:11px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:1px">Componente fatura</th>
+          <th style="padding:9px 12px;text-align:right;font-size:11px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:1px">Fat. s/ IVA</th>
+          <th style="padding:9px 12px;text-align:right;font-size:11px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:1px">Fat. c/ IVA</th>
+          <th style="padding:9px 12px;text-align:right;font-size:11px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:1px">Dashboard c/ IVA</th>
+          <th style="padding:9px 12px;text-align:right;font-size:11px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:1px">Diferença</th>
+        </tr></thead>
+        <tbody>${compRows}</tbody>
+      </table>
+    </div>
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px;font-weight:600">kWh por sub-período</div>
+    <div style="overflow-x:auto;margin-bottom:16px">
+      <table style="width:100%;border-collapse:collapse;background:var(--surface);border-radius:10px;overflow:hidden;min-width:640px">
+        <thead><tr style="border-bottom:1px solid var(--border)">
+          <th style="padding:7px 10px;text-align:left;font-size:11px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:1px">Período</th>
+          <th style="padding:7px 10px;text-align:right;font-size:11px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:1px">Fat. kWh</th>
+          <th style="padding:7px 10px;text-align:right;font-size:11px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:1px">Dash kWh</th>
+          <th style="padding:7px 10px;text-align:right;font-size:11px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:1px">Diferença</th>
+          <th style="padding:7px 10px;text-align:right;font-size:11px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:1px">Preço OMIE €/kWh</th>
+          <th style="padding:7px 10px;text-align:right;font-size:11px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:1px">Energia s/ IVA</th>
+          <th style="padding:7px 10px;text-align:right;font-size:11px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:1px">TAR €/kWh</th>
+          <th style="padding:7px 10px;text-align:right;font-size:11px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:1px">TAR s/ IVA</th>
+        </tr></thead>
+        <tbody>${spRows}</tbody>
+      </table>
+    </div>
+    <div style="font-size:12px;color:var(--muted);line-height:1.7">
+      ℹ️ <strong style="color:#f06060">Vermelho</strong> = fatura superior ao Dashboard estimado.<br>
+      A TSE aparece incluída no "Consumo em Simples" e também como linha separada "Financiamento Tarifa Social" na fatura.
+    </div>
+  </div>`;
+}
+
+
+</script>
+
+
+</body></html>
